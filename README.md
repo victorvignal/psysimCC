@@ -1,3 +1,13 @@
+---
+title: Clinical Simulator
+emoji: 🧠
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Simulador Clínico
 
 Simulador de pacientes para treino clínico de estudantes de psicologia. Agentes de IA encenam pacientes com diferentes quadros, permitindo praticar entrevista, formulação de caso e condução de intervenções antes de atendimentos reais. Um agente supervisor devolve feedback estruturado após cada sessão.

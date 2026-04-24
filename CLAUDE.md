@@ -81,7 +81,7 @@ simulador-clinico/
 
 ## Estado atual
 
-**Fase 1 concluída**: `ficha_loader.py` (Pydantic), `patient_agent.py` (OpenRouter/DeepSeek), `session.py` (Rich terminal). Testado com maria_01 — agente responde em personagem. Próximo: Fase 2 — agente supervisor.
+**Fase 1 concluída + voz**: `ficha_loader.py` (Pydantic), `patient_agent.py` (OpenRouter/DeepSeek), `session.py` (Rich terminal + flag `--voice`), `voice.py` (edge-tts, `pt-BR-FranciscaNeural`). Testado com maria_01 — agente responde em personagem e fala. Próximo: Fase 2 — agente supervisor.
 
 ## Decisões tomadas
 
@@ -95,6 +95,7 @@ simulador-clinico/
 - **2026-04-24**: separação entre `fichas/draft/` e `fichas/validated/` pra forçar curadoria
 - **2026-04-24**: primeira ficha (`maria_01`) construída manualmente como referência canônica do schema
 - **2026-04-24**: modelo LLM escolhido = DeepSeek via OpenRouter; interface MVP = rich (terminal); gerenciador = uv
+- **2026-04-24**: TTS adicionado via edge-tts (`pt-BR-FranciscaNeural`, rate -15% para fala pausada); Minimax TTS investigada mas bloqueada pelo plano atual
 
 ## Como trabalhar neste projeto
 

@@ -1,7 +1,8 @@
 import os
+from collections.abc import AsyncGenerator
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 
 from src.ficha_loader import Ficha
 
@@ -52,7 +53,7 @@ def build_patient_prompt(ficha: Ficha) -> str:
 - Não use termos diagnósticos sobre si mesmo.
 - Responda com o estilo de comunicação descrito acima: pausas, hesitações, humor autodepreciativo quando desconfortável.
 - Se o terapeuta fizer algo que aumentaria sua resistência, demonstre isso na resposta.
-- Limite suas respostas a 3-5 frases por turno, como numa conversa real.
+- Aim for 4-8 sentences per turn. Elaborate naturally when the therapist asks open questions; give briefer answers to closed or yes/no questions.
 - Este é um ambiente de treino clínico. O interlocutor é um estudante de psicologia praticando."""
 
 
@@ -61,11 +62,25 @@ class PatientAgent:
         self.ficha = ficha
         self.system_prompt = build_patient_prompt(ficha)
         self.history: list[dict[str, str]] = []
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-        )
+        _cfg = dict(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
+        self.client = OpenAI(**_cfg)
+        self.async_client = AsyncOpenAI(**_cfg)
         self.model = os.getenv("MODEL_ID", "deepseek/deepseek-chat")
+
+    async def respond_stream(self, user_message: str) -> AsyncGenerator[str, None]:
+        self.history.append({"role": "user", "content": user_message})
+        full_reply = ""
+        stream = await self.async_client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "system", "content": self.system_prompt}, *self.history],
+            stream=True,
+        )
+        async for chunk in stream:
+            token = chunk.choices[0].delta.content or ""
+            if token:
+                full_reply += token
+                yield token
+        self.history.append({"role": "assistant", "content": full_reply})
 
     def respond(self, user_message: str) -> str:
         self.history.append({"role": "user", "content": user_message})
