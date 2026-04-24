@@ -1,0 +1,21 @@
+# Ambiente
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.ruff_cache/
+
+# Sessões salvas (não versionar dados de treino)
+sessions/
+
+# Fichas em rascunho (curadoria local)
+fichas/draft/
+
+# IDEs
+.vscode/
+.idea/
+
+# UV
+uv.lock
