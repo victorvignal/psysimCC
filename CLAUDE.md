@@ -15,17 +15,17 @@ Projeto iniciado em conversa com Claude (web). Este arquivo consolida o contexto
 
 ## Stack
 
-- **Linguagem**: Python 3.11+
-- **Modelo LLM**: [DECIDIR — opções avaliadas: Claude Sonnet 4.6 (recomendação inicial), GPT-4o, Llama 3.3 70B via Ollama]
-- **Interface**: [DECIDIR — opções: terminal (rich), Chainlit, Streamlit]
+- **Linguagem**: Python 3.12
+- **Modelo LLM**: DeepSeek via OpenRouter (API OpenAI-compatible)
+- **Interface**: terminal com `rich` (MVP); Chainlit na Fase 3
 - **Persistência**: JSON em disco pro MVP; SQLite + SQLAlchemy se escalar
-- **Gerenciador de pacotes**: [DECIDIR — uv recomendado, alternativas: poetry, pip]
+- **Gerenciador de pacotes**: uv
 - **Formato de ficha**: YAML
 
 ## Fases de desenvolvimento
 
-- [ ] **Fase 0** — Setup: estrutura de pastas, pyproject.toml, .env, .gitignore
-- [ ] **Fase 1** — MVP terminal: loop de chat com uma ficha, transcrição em JSON
+- [x] **Fase 0** — Setup: estrutura de pastas, pyproject.toml, .env, .gitignore
+- [x] **Fase 1** — MVP terminal: loop de chat com uma ficha, transcrição em JSON
 - [ ] **Fase 2** — Agente supervisor: análise estruturada da transcrição pós-sessão
 - [ ] **Fase 3** — Múltiplas fichas + interface web (Chainlit)
 - [ ] **Fase 4** — Avaliação: rubrica de habilidades clínicas (baseada em MITI ou Helpful Responses)
@@ -81,19 +81,20 @@ simulador-clinico/
 
 ## Estado atual
 
-**Fase 0, passo 1 concluído**: estrutura pensada, primeira ficha (`maria_01.yaml`) pronta. Próximo: criar `pyproject.toml`, `.gitignore`, `.env.example` e inicializar repositório git.
+**Fase 1 concluída**: `ficha_loader.py` (Pydantic), `patient_agent.py` (OpenRouter/DeepSeek), `session.py` (Rich terminal). Testado com maria_01 — agente responde em personagem. Próximo: Fase 2 — agente supervisor.
 
-## Decisões pendentes (pedir ao usuário antes de implementar)
+## Decisões tomadas
 
-1. Modelo LLM pro MVP: Claude Sonnet 4.6 / GPT-4o / Ollama local / outro
-2. Interface inicial: terminal puro (rich) / Chainlit / Streamlit
-3. Gerenciador de pacotes: uv / poetry / pip+venv
+- Modelo: DeepSeek via OpenRouter (API key em `.env`)
+- Interface MVP: terminal com `rich`
+- Pacotes: uv
 
 ## Histórico de decisões tomadas
 
 - **2026-04-24**: formato da ficha definido como YAML (vs JSON) pela legibilidade ao escrever manualmente
 - **2026-04-24**: separação entre `fichas/draft/` e `fichas/validated/` pra forçar curadoria
 - **2026-04-24**: primeira ficha (`maria_01`) construída manualmente como referência canônica do schema
+- **2026-04-24**: modelo LLM escolhido = DeepSeek via OpenRouter; interface MVP = rich (terminal); gerenciador = uv
 
 ## Como trabalhar neste projeto
 
