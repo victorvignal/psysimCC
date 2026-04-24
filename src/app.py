@@ -4,7 +4,8 @@ import chainlit as cl
 
 from src.ficha_loader import load_ficha
 from src.patient_agent import PatientAgent
-from src.voice import PatientVoice, voice_for_ficha, _clean_text
+from src.supervisor_agent import APPROACHES, SupervisorAgent
+from src.voice import PatientVoice, voice_for_ficha
 
 _PROJECT_ROOT = Path(__file__).parent.parent
 _VALIDATED_DIR = _PROJECT_ROOT / "fichas" / "validated"
@@ -26,33 +27,35 @@ async def on_start() -> None:
     profile = cl.user_session.get("chat_profile") or "maria_01"
     ficha = load_ficha(_VALIDATED_DIR / f"{profile}.yaml")
 
-    agent = PatientAgent(ficha)
-    tts = voice_for_ficha(ficha.apresentacao.genero)
-
-    cl.user_session.set("agent", agent)
-    cl.user_session.set("tts", tts)
+    cl.user_session.set("agent", PatientAgent(ficha))
+    cl.user_session.set("tts", voice_for_ficha(ficha.apresentacao.genero))
+    cl.user_session.set("ficha", ficha)
     cl.user_session.set("nome", ficha.apresentacao.nome_ficticio)
 
     await cl.Message(
         content=(
-            f"**Patient:** {ficha.apresentacao.nome_ficticio} &nbsp;|&nbsp; "
-            f"**Level:** {ficha.nivel_dificuldade}\n\n"
-            "*Session started. Greet the patient to begin.*"
+            f"**Paciente:** {ficha.apresentacao.nome_ficticio} &nbsp;|&nbsp; "
+            f"**Nível:** {ficha.nivel_dificuldade}\n\n"
+            "*Sessão iniciada. Cumprimente o paciente para começar.*\n\n"
+            "_Quando quiser supervisão, envie_ **supervisão**_._"
         ),
     ).send()
 
 
 @cl.on_message
 async def on_message(message: cl.Message) -> None:
+    if "supervis" in message.content.lower():
+        await _run_supervision()
+        return
+
     agent: PatientAgent | None = cl.user_session.get("agent")
     if not agent:
-        await cl.Message(content="No patient loaded. Please start a new chat.").send()
+        await cl.Message(content="Nenhum paciente carregado. Inicie um novo chat.").send()
         return
 
     tts: PatientVoice = cl.user_session.get("tts")
-    nome: str = cl.user_session.get("nome", "Patient")
+    nome: str = cl.user_session.get("nome", "Paciente")
 
-    # Stream patient response token by token
     msg = cl.Message(content="", author=nome)
     await msg.send()
 
@@ -63,7 +66,6 @@ async def on_message(message: cl.Message) -> None:
 
     await msg.update()
 
-    # Attach TTS audio below the text response
     if tts and full_reply.strip():
         try:
             wav = tts.synthesize(full_reply)
@@ -75,3 +77,38 @@ async def on_message(message: cl.Message) -> None:
                 ).send()
         except Exception:
             pass
+
+
+async def _run_supervision() -> None:
+    agent: PatientAgent | None = cl.user_session.get("agent")
+    ficha = cl.user_session.get("ficha")
+
+    if not agent or not agent.history:
+        await cl.Message(content="Nenhuma sessão para supervisionar ainda. Converse com o paciente primeiro.").send()
+        return
+
+    # Approach selection
+    res = await cl.AskActionMessage(
+        content="## 🎓 Supervisão\n\nEscolha a abordagem terapêutica:",
+        actions=[
+            cl.Action(name=key, payload={"approach": key}, label=key)
+            for key in APPROACHES
+        ],
+        timeout=120,
+    ).send()
+
+    if not res:
+        return
+
+    approach = res.get("approach", "TCC")
+    supervisor = SupervisorAgent()
+
+    await cl.Message(content=f"Analisando a sessão pela perspectiva **{approach}**...").send()
+
+    msg = cl.Message(content="", author="Supervisor")
+    await msg.send()
+
+    async for token in supervisor.supervise_stream(ficha, agent.history, approach):
+        await msg.stream_token(token)
+
+    await msg.update()

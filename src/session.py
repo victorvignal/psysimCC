@@ -5,11 +5,13 @@ from pathlib import Path
 from typing import Optional
 
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.prompt import Prompt
+from rich.prompt import Confirm, Prompt
 
 from src.ficha_loader import load_ficha
 from src.patient_agent import PatientAgent
+from src.supervisor_agent import APPROACHES, SupervisorAgent
 from src.voice import PatientVoice, voice_for_ficha
 
 console = Console()
@@ -70,6 +72,31 @@ def run_session(ficha_path: str, voice: bool = False) -> None:
     if agent.history:
         path = save_session(ficha.id, agent.history)
         console.print(f"[dim]Sessão salva em: {path}[/dim]")
+        _offer_supervision(ficha, agent.history)
+
+
+def _offer_supervision(ficha, history: list[dict[str, str]]) -> None:
+    console.print()
+    if not Confirm.ask("[bold]Deseja supervisão desta sessão?[/bold]", default=True):
+        return
+
+    approach_keys = list(APPROACHES.keys())
+    console.print("\n[bold]Abordagens disponíveis:[/bold]")
+    for i, key in enumerate(approach_keys, 1):
+        console.print(f"  [cyan]{i}.[/cyan] {key}")
+
+    raw = Prompt.ask("\nEscolha (número ou nome)", default="1")
+    try:
+        approach = approach_keys[int(raw) - 1]
+    except (ValueError, IndexError):
+        approach = raw if raw in APPROACHES else approach_keys[0]
+
+    console.print(f"\n[bold cyan]Supervisão — {approach}[/bold cyan]\n")
+    supervisor = SupervisorAgent()
+    with console.status("[dim]Analisando sessão...[/dim]"):
+        feedback = supervisor.supervise(ficha, history, approach)
+    console.print(Markdown(feedback))
+    console.print()
 
 
 def main() -> None:
