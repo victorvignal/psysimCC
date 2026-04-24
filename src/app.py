@@ -2,6 +2,7 @@ from pathlib import Path
 
 import chainlit as cl
 
+from src.database import save_session, save_supervision
 from src.ficha_loader import load_ficha
 from src.patient_agent import PatientAgent
 from src.supervisor_agent import APPROACHES, SupervisorAgent
@@ -40,6 +41,15 @@ async def on_start() -> None:
             "_Quando quiser supervisão, envie_ **supervisão**_._"
         ),
     ).send()
+
+
+@cl.on_chat_end
+async def on_end() -> None:
+    agent: PatientAgent | None = cl.user_session.get("agent")
+    ficha = cl.user_session.get("ficha")
+    if agent and agent.history and ficha:
+        session_id = save_session(ficha.id, agent.history)
+        cl.user_session.set("session_id", session_id)
 
 
 @cl.on_message
@@ -108,7 +118,15 @@ async def _run_supervision() -> None:
     msg = cl.Message(content="", author="Supervisor")
     await msg.send()
 
+    full_feedback = ""
     async for token in supervisor.supervise_stream(ficha, agent.history, approach):
         await msg.stream_token(token)
+        full_feedback += token
 
     await msg.update()
+
+    session_id = cl.user_session.get("session_id")
+    if not session_id:
+        session_id = save_session(ficha.id, agent.history)
+        cl.user_session.set("session_id", session_id)
+    save_supervision(session_id, approach, full_feedback)
