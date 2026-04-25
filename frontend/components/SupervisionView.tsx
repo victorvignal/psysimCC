@@ -37,7 +37,7 @@ export default function SupervisionView({
     setLoadingRubric(true);
 
     // Rubrica e narrativa em paralelo
-    getRubric(sessionId, approach)
+    getRubric(sessionId)
       .then((r) => setRubrica(r))
       .catch(() => {})
       .finally(() => setLoadingRubric(false));

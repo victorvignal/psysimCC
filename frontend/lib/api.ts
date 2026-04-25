@@ -96,6 +96,7 @@ export interface Dashboard {
   recent_sessions: Array<{
     id: string;
     ficha_id: string;
+    ficha_nome: string;
     created_at: string;
     duration_seconds: number;
   }>;
@@ -108,15 +109,8 @@ export async function getDashboard(): Promise<Dashboard> {
   return res.json();
 }
 
-export async function getRubric(
-  sessionId: string,
-  approach: string
-): Promise<Rubrica> {
-  const res = await fetch(`${BASE}/api/sessions/${sessionId}/rubric`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ approach }),
-  });
+export async function getRubric(sessionId: string): Promise<Rubrica> {
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}/rubric`, { method: "POST" });
   if (!res.ok) throw new Error("Erro ao gerar rubrica");
   return res.json();
 }
