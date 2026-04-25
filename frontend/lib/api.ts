@@ -84,6 +84,30 @@ export interface Rubrica {
   dimensoes: DimensaoRubrica[];
 }
 
+export interface DashboardStats {
+  sessions: number;
+  minutes: number;
+  feedbacks: number;
+  patients: number;
+}
+
+export interface Dashboard {
+  stats: DashboardStats;
+  recent_sessions: Array<{
+    id: string;
+    ficha_id: string;
+    created_at: string;
+    duration_seconds: number;
+  }>;
+  progress: Record<string, Record<string, number[]>>;
+}
+
+export async function getDashboard(): Promise<Dashboard> {
+  const res = await fetch(`${BASE}/api/dashboard`);
+  if (!res.ok) throw new Error("Erro ao carregar dashboard");
+  return res.json();
+}
+
 export async function getRubric(
   sessionId: string,
   approach: string

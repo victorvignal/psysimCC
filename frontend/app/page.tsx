@@ -1,14 +1,20 @@
-import { listFichas, type FichaInfo } from "@/lib/api";
+import { getDashboard, listFichas, type FichaInfo, type Dashboard } from "@/lib/api";
 import PatientGrid from "@/components/PatientGrid";
+import DashboardStats from "@/components/DashboardStats";
 
 export default async function Home() {
   let fichas: FichaInfo[] = [];
+  let dashboard: Dashboard | null = null;
   let error: string | null = null;
 
   try {
-    fichas = await listFichas();
+    [fichas, dashboard] = await Promise.all([listFichas(), getDashboard()]);
   } catch {
-    error = "Não foi possível conectar ao servidor. Verifique se o backend está rodando.";
+    try {
+      fichas = await listFichas();
+    } catch {
+      error = "Não foi possível conectar ao servidor.";
+    }
   }
 
   return (
@@ -18,22 +24,29 @@ export default async function Home() {
         <span className="font-bold text-base tracking-tight">psysim</span>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <h1 className="text-2xl font-bold mb-0.5" style={{ color: "var(--text)" }}>
-          Escolha um paciente
-        </h1>
-        <p className="text-sm mb-8 font-mono" style={{ color: "var(--text-faint)" }}>
-          {error ? "" : `${fichas.length} ${fichas.length === 1 ? "ficha disponível" : "fichas disponíveis"}`}
-        </p>
+      <div className="max-w-5xl mx-auto px-6 py-10">
 
-        {error ? (
-          <div className="rounded-lg p-4 text-sm"
-            style={{ background: "var(--red-bg)", color: "var(--red-fg)", border: "1px solid var(--red-fg)" }}>
-            {error}
-          </div>
-        ) : (
-          <PatientGrid fichas={fichas} />
-        )}
+        {/* Stats */}
+        {dashboard && <DashboardStats dashboard={dashboard} />}
+
+        {/* Pacientes */}
+        <div className="mt-10">
+          <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text)" }}>
+            Pacientes disponíveis
+          </h2>
+          <p className="text-xs font-mono mb-5" style={{ color: "var(--text-faint)" }}>
+            {fichas.length} {fichas.length === 1 ? "ficha" : "fichas"}
+          </p>
+
+          {error ? (
+            <div className="rounded-lg p-4 text-sm"
+              style={{ background: "var(--red-bg)", color: "var(--red-fg)", border: "1px solid var(--red-fg)" }}>
+              {error}
+            </div>
+          ) : (
+            <PatientGrid fichas={fichas} />
+          )}
+        </div>
       </div>
     </main>
   );

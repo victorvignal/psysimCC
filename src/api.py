@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
+from src.database import get_dashboard, save_session, save_supervision
 from src.ficha_loader import Ficha, load_ficha
 from src.patient_agent import PatientAgent
 from src.supervisor_agent import APPROACHES, SupervisorAgent, RUBRICA_DIMENSOES
@@ -201,4 +202,46 @@ def end_session(session_id: str) -> dict:
     state = _sessions.pop(session_id, None)
     if not state:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
-    return {"turns": len(state.agent.history) // 2}
+    turns = len(state.agent.history) // 2
+    duration = int(state.timer.elapsed_seconds) if state.timer else 0
+    save_session(state.ficha.id, state.agent.history, duration_seconds=duration)
+    return {"turns": turns}
+
+
+@app.post("/api/sessions/{session_id}/supervise-save")
+async def supervise_and_save(session_id: str, req: SuperviseRequest):
+    """Streaming supervision that saves to DB on completion."""
+    state = _sessions.get(session_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    if not state.agent.history:
+        raise HTTPException(status_code=400, detail="Nenhuma conversa para supervisionar")
+
+    supervisor = SupervisorAgent()
+
+    async def generate():
+        full = ""
+        async for token in supervisor.supervise_stream(state.ficha, state.agent.history, req.approach):
+            full += token
+            yield {"data": json.dumps({"type": "token", "content": token})}
+
+        # Busca rubrica e salva tudo
+        try:
+            rubrica = supervisor.get_rubrica(state.ficha, state.agent.history, req.approach)
+            scores = [{"nome": d.nome, "score": d.score, "justificativa": d.justificativa} for d in rubrica]
+        except Exception:
+            scores = []
+
+        session_db_id = save_session(
+            state.ficha.id, state.agent.history,
+            duration_seconds=int(state.timer.elapsed_seconds) if state.timer else 0,
+        )
+        save_supervision(session_db_id, req.approach, full, rubric_scores=scores)
+        yield {"data": json.dumps({"type": "done", "rubric": scores})}
+
+    return EventSourceResponse(generate())
+
+
+@app.get("/api/dashboard")
+def dashboard() -> dict:
+    return get_dashboard()
