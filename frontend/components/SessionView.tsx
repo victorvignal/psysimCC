@@ -98,9 +98,12 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     setSupervisionContent("");
     setSupervisionLoading(true);
 
-    // Build the history to send
+    // Build the history to send (strip pending field and extra keys)
     const startFrom = getHistorySlice(mode);
-    const historyToSend = startFrom !== null ? messages.slice(startFrom) : messages;
+    const historyToSend = (startFrom !== null ? messages.slice(startFrom) : messages).map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/sessions/${sessionId}/supervise-preview`, {
@@ -108,7 +111,11 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ approach, mode, history: historyToSend }),
       });
-      if (!res.ok) throw new Error("Erro na supervisão");
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Supervise failed:", res.status, text);
+        throw new Error(`Status ${res.status}`);
+      }
       const reader = res.body?.getReader();
       if (!reader) throw new Error("Sem stream");
       const decoder = new TextDecoder();
@@ -128,7 +135,8 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
           } catch { /* ignora */ }
         }
       }
-    } catch {
+    } catch (err) {
+      console.error("Supervise error:", err);
       setSupervisionContent("Erro ao gerar supervisão. Tente novamente.");
     } finally {
       setSupervisionLoading(false);
