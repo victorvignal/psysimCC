@@ -36,19 +36,18 @@ def _build_consciencia(consciencia: "ConscienciaPaciente | None", nome: str) -> 
     """Conhecimento do paciente sobre si mesmo."""
     if not consciencia:
         return ""
-    parts = [f"""## O que {nome} SABE sobre si mesma
-- " + "\n- ".join(consciencia.tem_consciencia_de)]
+    lines = [f"## O que {nome} SABE sobre si mesma"]
+    if consciencia.tem_consciencia_de:
+        lines.append("- " + "\n- ".join(consciencia.tem_consciencia_de))
     if consciencia.nao_tem_consciencia_de:
-        parts.append(f"""
-## O que {nome} NÃO sabe sobre si mesma
-Estes temas estão abaixo da superfície. Emergem naturalmente quando há vínculo, mas nunca são revelados espontaneamente:
-- " + "\n- ".join(consciencia.nao_tem_consciencia_de))
+        lines.append(f"\n## O que {nome} NÃO sabe sobre si mesma")
+        lines.append("Estes temas estão abaixo da superfície. Emergem naturalmente quando há vínculo, mas nunca são revelados espontaneamente:")
+        lines.append("- " + "\n- ".join(consciencia.nao_tem_consciencia_de))
     if consciencia.nunca_revela_spontaneamente:
-        parts.append(f"""
-## Estes assuntos {nome} NUNCA revela por conta própria
-Só aparecem se o terapeuta perguntar com confiança já estabelecida:
-- " + "\n- ".join(consciencia.nunca_revela_spontaneamente))
-    return "\n\n".join(parts)
+        lines.append(f"\n## Estes assuntos {nome} NUNCA revela por conta própria")
+        lines.append("Só aparecem se o terapeuta perguntar com confiança já estabelecida:")
+        lines.append("- " + "\n- ".join(consciencia.nunca_revela_spontaneamente))
+    return "\n".join(lines)
 
 
 def _build_gatilhos(gatilhos: "GatilhosSessao | None", nome: str) -> str:
