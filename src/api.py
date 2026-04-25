@@ -148,20 +148,22 @@ def start_session(req: StartSessionRequest) -> dict:
 
 @app.post("/api/sessions/{session_id}/message")
 async def send_message(session_id: str, req: MessageRequest) -> dict:
-    state = _sessions.get(session_id)
-    if not state:
-        state = _load_session(session_id)
-        if not state:
-            raise HTTPException(status_code=404, detail="Sessão não encontrada")
-        _sessions[session_id] = state
-
+    import traceback
     try:
-        reply = await state.agent.respond_async(req.content)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro do modelo: {type(e).__name__}: {e}")
+        state = _sessions.get(session_id)
+        if not state:
+            state = _load_session(session_id)
+            if not state:
+                raise HTTPException(status_code=404, detail="Sessão não encontrada")
+            _sessions[session_id] = state
 
-    _persist_session(session_id, state)
-    return {"content": reply}
+        reply = await state.agent.respond_async(req.content)
+        _persist_session(session_id, state)
+        return {"content": reply}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e} | {traceback.format_exc()}")
 
 
 @app.post("/api/sessions/{session_id}/supervise")
