@@ -13,18 +13,28 @@ const NIVEL = {
 export default function PatientGrid({ fichas }: { fichas: FichaInfo[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleStart(ficha: FichaInfo) {
     setLoading(ficha.id);
+    setError(null);
     try {
       const session = await startSession(ficha.id);
       router.push(`/session/${session.session_id}`);
     } catch {
       setLoading(null);
+      setError("Erro ao conectar com o servidor. Tente novamente.");
     }
   }
 
   return (
+    <div className="flex flex-col gap-5">
+    {error && (
+      <div className="rounded-lg px-4 py-3 text-sm font-mono"
+        style={{ background: "var(--red-bg)", color: "var(--red-fg)", border: "1px solid var(--red-fg)" }}>
+        {error}
+      </div>
+    )}
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {fichas.map((f) => {
         const nivel = NIVEL[f.nivel as keyof typeof NIVEL] ?? NIVEL.iniciante;
@@ -73,6 +83,7 @@ export default function PatientGrid({ fichas }: { fichas: FichaInfo[] }) {
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
