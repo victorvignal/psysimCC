@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -165,29 +165,7 @@ async def send_message(session_id: str, req: MessageRequest) -> dict:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e} | {traceback.format_exc()}")
-
-
-@app.post("/api/sessions/{session_id}/supervise")
-async def supervise(session_id: str):
-    state = _sessions.get(session_id)
-    if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
-    if not state.agent.history:
-        raise HTTPException(status_code=400, detail="Nenhuma conversa para supervisionar")
-
-    supervisor = SupervisorAgent()
-    approach = state.approach or "TCC"
-
-    async def generate():
-        full = ""
-        async for token in supervisor.supervise_stream(state.ficha, state.agent.history, approach):
-            full += token
-            yield {"data": json.dumps({"type": "token", "content": token})}
-        state.last_supervision = full
-        yield {"data": json.dumps({"type": "done"})}
-
-    return EventSourceResponse(generate())
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
 
 @app.get("/api/sessions/{session_id}")
@@ -238,7 +216,7 @@ def start_timer(session_id: str) -> dict:
     if not state:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
     if not state.timer:
-        state.timer = SessionTimer(30)  # default 30 min
+        state.timer = SessionTimer(30)
     if state.timer.is_paused:
         state.timer.toggle()
     timer_info = {
@@ -249,6 +227,50 @@ def start_timer(session_id: str) -> dict:
         "duration_minutes": state.timer.duration_minutes,
     }
     return {"timer": timer_info}
+
+
+@app.post("/api/sessions/{session_id}/supervise")
+async def supervise(session_id: str):
+    """Supervisão via histórico da sessão (chamado pelo frontend após fim da sessão)."""
+    state = _sessions.get(session_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    if not state.agent.history:
+        raise HTTPException(status_code=400, detail="Nenhuma conversa para supervisionar")
+
+    supervisor = SupervisorAgent()
+    approach = state.approach or "TCC"
+
+    async def generate():
+        full = ""
+        async for token in supervisor.supervise_stream(state.ficha, state.agent.history, approach):
+            full += token
+            yield {"data": json.dumps({"type": "token", "content": token})}
+        state.last_supervision = full
+        yield {"data": json.dumps({"type": "done"})}
+
+    return EventSourceResponse(generate())
+
+
+@app.post("/api/sessions/{session_id}/supervise-preview")
+async def supervise_preview(session_id: str, req: SupervisePreviewRequest):
+    """Supervisão em tempo real com histórico enviado diretamente pelo frontend."""
+    state = _sessions.get(session_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    if not req.history:
+        raise HTTPException(status_code=400, detail="Nenhuma mensagem para supervisionar")
+
+    supervisor = SupervisorAgent()
+
+    async def generate():
+        full = ""
+        async for token in supervisor.supervise_stream(state.ficha, req.history, req.approach):
+            full += token
+            yield {"data": json.dumps({"type": "token", "content": token})}
+        yield {"data": json.dumps({"type": "done"})}
+
+    return EventSourceResponse(generate())
 
 
 @app.post("/api/sessions/{session_id}/rubric")
@@ -280,62 +302,6 @@ def end_session(session_id: str) -> dict:
     duration = int(state.timer.elapsed_seconds) if state.timer else 0
     save_session(state.ficha.id, state.agent.history, duration_seconds=duration)
     return {"turns": turns}
-
-
-@app.post("/api/sessions/{session_id}/supervise-preview")
-async def supervise_preview(session_id: str, req: SupervisePreviewRequest):
-    """Supervisão em tempo real — aceita histórico diretamente do frontend.
-    Modos:
-      - realtime: últimas 2 trocas (4 mensagens)
-      - session: toda a conversa
-      - last3: últimas 3 trocas (6 mensagens)
-    """
-    state = _sessions.get(session_id)
-    if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
-    if not req.history:
-        raise HTTPException(status_code=400, detail="Nenhuma mensagem para supervisionar")
-
-    supervisor = SupervisorAgent()
-
-    async def generate():
-        full = ""
-        async for token in supervisor.supervise_stream(state.ficha, req.history, req.approach):
-            full += token
-            yield {"data": json.dumps({"type": "token", "content": token})}
-        yield {"data": json.dumps({"type": "done"})}
-
-    return EventSourceResponse(generate())
-    """Streaming supervision that saves to DB on completion."""
-    state = _sessions.get(session_id)
-    if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
-    if not state.agent.history:
-        raise HTTPException(status_code=400, detail="Nenhuma conversa para supervisionar")
-
-    supervisor = SupervisorAgent()
-
-    async def generate():
-        full = ""
-        async for token in supervisor.supervise_stream(state.ficha, state.agent.history, req.approach):
-            full += token
-            yield {"data": json.dumps({"type": "token", "content": token})}
-
-        # Busca rubrica e salva tudo
-        try:
-            rubrica = supervisor.get_rubrica(state.ficha, state.agent.history, req.approach)
-            scores = [{"nome": d.nome, "score": d.score, "justificativa": d.justificativa} for d in rubrica]
-        except Exception:
-            scores = []
-
-        session_db_id = save_session(
-            state.ficha.id, state.agent.history,
-            duration_seconds=int(state.timer.elapsed_seconds) if state.timer else 0,
-        )
-        save_supervision(session_db_id, req.approach, full, rubric_scores=scores)
-        yield {"data": json.dumps({"type": "done", "rubric": scores})}
-
-    return EventSourceResponse(generate())
 
 
 @app.get("/api/dashboard")

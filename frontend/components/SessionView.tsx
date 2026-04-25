@@ -204,7 +204,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                 <button onClick={() => handleSupervise("realtime")}
                   className="text-xs font-mono px-2 h-7 rounded transition-colors"
                   style={{ background: "rgba(255,255,255,0.12)", color: "var(--nav-text)" }}>
-                  🎯实时
+                  🎯tempo real
                 </button>
                 <button onClick={() => handleSupervise("session")}
                   className="text-xs font-mono px-2 h-7 rounded transition-colors"
@@ -214,7 +214,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                 <button onClick={() => handleSupervise("last3")}
                   className="text-xs font-mono px-2 h-7 rounded transition-colors"
                   style={{ background: "rgba(255,255,255,0.12)", color: "var(--nav-text)" }}>
-                  ⏪trocas
+                  ⏪recente
                 </button>
               </div>
               <button onClick={() => setSupervisionPanelOpen(false)}
@@ -227,7 +227,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             <button onClick={() => setSupervisionPanelOpen(true)}
               className="text-xs font-mono px-2.5 h-7 rounded transition-colors hover:bg-white/10"
               style={{ color: "rgba(250,250,247,0.5)" }}>
-              🎓
+              🎓 supervisão
             </button>
           )}
 
