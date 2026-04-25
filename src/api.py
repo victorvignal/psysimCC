@@ -147,18 +147,17 @@ def start_session(req: StartSessionRequest) -> dict:
 
 
 @app.post("/api/sessions/{session_id}/message")
-async def send_message(session_id: str, req: MessageRequest):
+async def send_message(session_id: str, req: MessageRequest) -> dict:
     state = _sessions.get(session_id)
     if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        state = _load_session(session_id)
+        if not state:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        _sessions[session_id] = state
 
-    async def generate():
-        async for token in state.agent.respond_stream(req.content):
-            yield {"data": json.dumps({"type": "token", "content": token})}
-        _persist_session(session_id, state)
-        yield {"data": json.dumps({"type": "done"})}
-
-    return EventSourceResponse(generate())
+    reply = await state.agent.respond_async(req.content)
+    _persist_session(session_id, state)
+    return {"content": reply}
 
 
 @app.post("/api/sessions/{session_id}/supervise")

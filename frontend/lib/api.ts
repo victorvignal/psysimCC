@@ -164,18 +164,18 @@ function makeStreamer(url: string, body: object, onToken: (t: string) => void, o
   return () => controller.abort();
 }
 
-export function streamMessage(
+export async function sendMessage(
   sessionId: string,
-  content: string,
-  onToken: (t: string) => void,
-  onDone: () => void
-): () => void {
-  return makeStreamer(
-    `${BASE}/api/sessions/${sessionId}/message`,
-    { content },
-    onToken,
-    onDone
-  );
+  content: string
+): Promise<string> {
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}/message`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw new Error("Erro ao enviar mensagem");
+  const data = await res.json();
+  return data.content as string;
 }
 
 export function streamSupervision(

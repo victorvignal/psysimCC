@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   getSession,
   toggleTimer,
-  streamMessage,
+  sendMessage,
   type SessionState,
   type TimerInfo,
 } from "@/lib/api";
@@ -33,7 +33,6 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [notes, setNotes] = useState("");
   const [approach, setApproach] = useState("TCC");
   const bottomRef = useRef<HTMLDivElement>(null);
-  const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     getSession(sessionId)
@@ -53,25 +52,18 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     setStreaming(true);
     setMessages((m) => [...m, { role: "assistant", content: "", pending: true }]);
 
-    cancelRef.current = streamMessage(
-      sessionId,
-      text,
-      (token) => {
-        setMessages((m) => {
-          const last = m[m.length - 1];
-          if (!last || last.role !== "assistant") return m;
-          return [...m.slice(0, -1), { ...last, content: last.content + token }];
-        });
-      },
-      () => {
-        setMessages((m) => {
-          const last = m[m.length - 1];
-          if (!last) return m;
-          return [...m.slice(0, -1), { ...last, pending: false }];
-        });
-        setStreaming(false);
-      }
-    );
+    try {
+      const reply = await sendMessage(sessionId, text);
+      setMessages((m) => {
+        const last = m[m.length - 1];
+        if (!last) return m;
+        return [...m.slice(0, -1), { ...last, content: reply, pending: false }];
+      });
+    } catch {
+      setMessages((m) => m.slice(0, -1));
+    } finally {
+      setStreaming(false);
+    }
   }
 
   async function handleToggleTimer() {
@@ -80,7 +72,6 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   }
 
   function handleEnd() {
-    cancelRef.current?.();
     const params = new URLSearchParams({
       nome: session?.nome ?? "",
       approach,

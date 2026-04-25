@@ -84,6 +84,16 @@ class PatientAgent:
                 yield token
         self.history.append({"role": "assistant", "content": full_reply})
 
+    async def respond_async(self, user_message: str) -> str:
+        self.history.append({"role": "user", "content": user_message})
+        resp = await self.async_client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "system", "content": self.system_prompt}, *self.history],
+        )
+        reply = resp.choices[0].message.content or ""
+        self.history.append({"role": "assistant", "content": reply})
+        return reply
+
     def respond(self, user_message: str) -> str:
         self.history.append({"role": "user", "content": user_message})
         response = self.client.chat.completions.create(
