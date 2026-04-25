@@ -17,13 +17,13 @@ class Apresentacao(BaseModel):
 
 class Comportamento(BaseModel):
     estilo_comunicacao: str          # descrição livre do estilo
-    estilo_sessao: str               # plain | upset | verbose | reserved | tangent | pleasing
-    como_responde_abertas: str     # como responde a perguntas abertas
-    como_responde_pressao: str     # como reage quando se sente pressionada
-    reacao_silencio: str             # como reage a silêncio do terapeuta
+    estilo_sessao: str = "plain"    # plain | upset | verbose | reserved | tangent | pleasing
+    como_responde_abertas: str = ""  # como responde a perguntas abertas
+    como_responde_pressao: str = ""  # como reage quando se sente pressionada
+    reacao_silencio: str = ""       # como reage a silêncio do terapeuta
     defesas_tipicas: list[str] = []
     resistencias: list[str] = []
-    alianca_inicial: str
+    alianca_inicial: str = ""
     red_flags: list[str] = []
     arco_possivel: str | None = None
 
