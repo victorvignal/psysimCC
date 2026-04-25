@@ -243,11 +243,15 @@ async def supervise(session_id: str):
 
     async def generate():
         full = ""
-        async for token in supervisor.supervise_stream(state.ficha, state.agent.history, approach):
-            full += token
-            yield {"data": json.dumps({"type": "token", "content": token})}
-        state.last_supervision = full
-        yield {"data": json.dumps({"type": "done"})}
+        try:
+            async for token in supervisor.supervise_stream(state.ficha, state.agent.history, approach):
+                full += token
+                yield {"data": json.dumps({"type": "token", "content": token})}
+        except Exception:
+            pass
+        finally:
+            state.last_supervision = full
+            yield {"data": json.dumps({"type": "done"})}
 
     return EventSourceResponse(generate())
 
@@ -265,10 +269,15 @@ async def supervise_preview(session_id: str, req: SupervisePreviewRequest):
 
     async def generate():
         full = ""
-        async for token in supervisor.supervise_stream(state.ficha, req.history, req.approach):
-            full += token
-            yield {"data": json.dumps({"type": "token", "content": token})}
-        yield {"data": json.dumps({"type": "done"})}
+        try:
+            async for token in supervisor.supervise_stream(state.ficha, req.history, req.approach):
+                full += token
+                yield {"data": json.dumps({"type": "token", "content": token})}
+        except Exception:
+            pass
+        finally:
+            state.last_supervision = full
+            yield {"data": json.dumps({"type": "done"})}
 
     return EventSourceResponse(generate())
 

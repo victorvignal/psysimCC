@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { endSession, getRubric, streamSupervision, type Rubrica } from "@/lib/api";
+import { saveSession, getRubric, streamSupervision, type Rubrica } from "@/lib/api";
 import RubricaView from "./RubricaView";
 
 const APPROACHES = ["TCC", "Psicodinâmica", "Humanista", "ACT", "Sistêmica", "Integrativa"];
@@ -25,8 +25,11 @@ export default function SupervisionView({
   const [streaming, setStreaming] = useState(false);
   const [done, setDone] = useState(false);
 
+  // Save session when arriving at supervision page
   useEffect(() => {
-    return () => { endSession(sessionId).catch(() => {}); };
+    // Session is already saved when user clicked "Encerrar" on SessionView
+    // This just cleans up if user navigates away without saving
+    return () => { saveSession(sessionId).catch(() => {}); };
   }, [sessionId]);
 
   async function handleStart() {

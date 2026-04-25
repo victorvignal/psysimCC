@@ -196,6 +196,11 @@ export function streamSupervision(
   );
 }
 
+export async function saveSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Erro ao salvar sessão");
+}
+
 export function streamSupervisionPreview(
   sessionId: string,
   approach: string,
