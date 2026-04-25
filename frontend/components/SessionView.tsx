@@ -36,10 +36,9 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    getSession(sessionId).then((s) => {
-      setSession(s);
-      setTimer(s.timer);
-    });
+    getSession(sessionId)
+      .then((s) => { setSession(s); setTimer(s.timer); })
+      .catch(() => router.replace("/"));
   }, [sessionId]);
 
   useEffect(() => {

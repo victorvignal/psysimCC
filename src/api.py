@@ -44,6 +44,47 @@ class SessionState:
 _sessions: dict[str, SessionState] = {}
 
 
+def _persist_session(session_id: str, state: SessionState) -> None:
+    from src.database import _get_client
+    client = _get_client()
+    if not client:
+        return
+    try:
+        client.table("active_sessions").upsert({
+            "id": session_id,
+            "ficha_id": state.ficha.id,
+            "history": state.agent.history,
+            "timer_minutes": state.timer.duration_minutes if state.timer else 0,
+            "elapsed_seconds": int(state.timer.elapsed_seconds) if state.timer else 0,
+            "approach": state.approach,
+            "updated_at": "now()",
+        }).execute()
+    except Exception:
+        pass
+
+
+def _load_session(session_id: str) -> SessionState | None:
+    from src.database import _get_client
+    client = _get_client()
+    if not client:
+        return None
+    try:
+        result = client.table("active_sessions").select("*").eq("id", session_id).execute()
+        if not result.data:
+            return None
+        row = result.data[0]
+        path = _FICHAS_DIR / f"{row['ficha_id']}.yaml"
+        if not path.exists():
+            return None
+        ficha = load_ficha(path)
+        agent = PatientAgent(ficha)
+        agent.history = row.get("history") or []
+        timer = SessionTimer(row["timer_minutes"]) if row.get("timer_minutes", 0) > 0 else None
+        return SessionState(ficha=ficha, agent=agent, timer=timer, approach=row.get("approach", "TCC"))
+    except Exception:
+        return None
+
+
 # ── Request / response models ──────────────────────────────────
 
 class StartSessionRequest(BaseModel):
@@ -91,11 +132,9 @@ def start_session(req: StartSessionRequest) -> dict:
     timer = SessionTimer(req.timer_minutes) if req.timer_minutes > 0 else None
     session_id = str(uuid.uuid4())
 
-    _sessions[session_id] = SessionState(
-        ficha=ficha,
-        agent=PatientAgent(ficha),
-        timer=timer,
-    )
+    state = SessionState(ficha=ficha, agent=PatientAgent(ficha), timer=timer)
+    _sessions[session_id] = state
+    _persist_session(session_id, state)
     return {
         "session_id": session_id,
         "ficha": {
@@ -116,6 +155,7 @@ async def send_message(session_id: str, req: MessageRequest):
     async def generate():
         async for token in state.agent.respond_stream(req.content):
             yield {"data": json.dumps({"type": "token", "content": token})}
+        _persist_session(session_id, state)
         yield {"data": json.dumps({"type": "done"})}
 
     return EventSourceResponse(generate())
@@ -146,7 +186,10 @@ async def supervise(session_id: str, req: SuperviseRequest):
 def get_session(session_id: str) -> dict:
     state = _sessions.get(session_id)
     if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        state = _load_session(session_id)
+        if not state:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        _sessions[session_id] = state
 
     timer_info = None
     if state.timer:
