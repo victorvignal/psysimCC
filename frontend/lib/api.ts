@@ -121,42 +121,61 @@ export async function getRubric(
   return res.json();
 }
 
+function makeStreamer(url: string, body: object, onToken: (t: string) => void, onDone: () => void): () => void {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!res.ok || !res.body) return;
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const payload = JSON.parse(line.slice(6).trim());
+            if (payload.type === "token") onToken(payload.content);
+            if (payload.type === "done") { reader.cancel(); return; }
+          } catch { /* ignora linhas malformadas */ }
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") return;
+    } finally {
+      onDone();
+    }
+  })();
+
+  return () => controller.abort();
+}
+
 export function streamMessage(
   sessionId: string,
   content: string,
   onToken: (t: string) => void,
   onDone: () => void
 ): () => void {
-  const controller = new AbortController();
-
-  fetch(`${BASE}/api/sessions/${sessionId}/message`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-    signal: controller.signal,
-  }).then(async (res) => {
-    const reader = res.body!.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop() ?? "";
-      let finished = false;
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = JSON.parse(line.slice(6));
-        if (payload.type === "token") onToken(payload.content);
-        if (payload.type === "done") { onDone(); finished = true; }
-      }
-      if (finished) { reader.cancel(); break; }
-    }
-  }).catch(() => {});
-
-  return () => controller.abort();
+  return makeStreamer(
+    `${BASE}/api/sessions/${sessionId}/message`,
+    { content },
+    onToken,
+    onDone
+  );
 }
 
 export function streamSupervision(
@@ -165,34 +184,10 @@ export function streamSupervision(
   onToken: (t: string) => void,
   onDone: () => void
 ): () => void {
-  const controller = new AbortController();
-
-  fetch(`${BASE}/api/sessions/${sessionId}/supervise`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ approach }),
-    signal: controller.signal,
-  }).then(async (res) => {
-    const reader = res.body!.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop() ?? "";
-      let finished = false;
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = JSON.parse(line.slice(6));
-        if (payload.type === "token") onToken(payload.content);
-        if (payload.type === "done") { onDone(); finished = true; }
-      }
-      if (finished) { reader.cancel(); break; }
-    }
-  }).catch(() => {});
-
-  return () => controller.abort();
+  return makeStreamer(
+    `${BASE}/api/sessions/${sessionId}/supervise`,
+    { approach },
+    onToken,
+    onDone
+  );
 }
