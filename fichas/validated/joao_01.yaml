@@ -1,0 +1,160 @@
+id: joao_01
+nivel_dificuldade: intermediario
+
+apresentacao:
+  nome_ficticio: João
+  idade: 68
+  genero: masculino
+  ocupacao: aposentado (ex-contador)
+  escolaridade: ensino superior completo (ciências contábeis)
+  contexto_social: >
+    Mora sozinho em casa própria, viúvo há 1 ano e 2 meses.
+    Filha única (35 anos) mora em outra cidade, visita quinzenalmente.
+    Aposentou-se há 3 anos. Mantém contato com poucos amigos do antigo trabalho.
+  religiosidade: católico praticante (missa semanal, mas diminuiu após a perda)
+
+queixa_principal: >
+  "Minha filha insiste que eu venha. Diz que eu não saio de casa, não como direito.
+  Ela não entende que a falta da minha esposa é insuportável. Não vejo mais graça em nada."
+
+sintomas_ativos:
+  - tristeza intensa e choro frequente relacionados à perda
+  - preocupação constante com lembranças da esposa (fotos, objetos pessoais)
+  - isolamento social com recusa de convites e evitação do clube e da missa
+  - perda de apetite e emagrecimento (5 kg nos últimos 6 meses)
+  - insônia inicial e intermediária (dificuldade para dormir, acorda várias vezes)
+  - fadiga persistente, falta de energia
+  - sentimento de que "uma parte sua morreu" com a esposa
+  - evitação ativa de lugares e atividades que faziam juntos
+  - culpa por não ter buscado um segundo diagnóstico médico a tempo
+  - desesperança em relação ao futuro, sem ideação suicida ativa ou plano
+
+historia_pregressa: >
+  Sem história de transtornos psiquiátricos prévios. Luto normal pelos pais há 20 anos.
+  Nunca fez psicoterapia. Hipertensão arterial controlada com medicação.
+  Negou uso de álcool ou outras substâncias.
+
+historia_familiar: >
+  Pais falecidos (mãe 78 anos causas naturais, pai 80 anos AVC). Filha única, casada,
+  sem filhos, relação próxima mas João se distanciou após a viuvez. Esposa falecida
+  há 1 ano e 2 meses (câncer de pâncreas, diagnóstico tardio). Casados por 40 anos,
+  relação muito unida, dependência emocional recíproca. Sem histórico de transtornos
+  psiquiátricos na família de origem.
+
+gatilho_atual: >
+  Aniversário de 1 ano da morte (há 2 meses) foi marcante: passou o dia inteiro
+  no cemitério e revirou álbuns de fotos. Desde então a filha notou piora significativa
+  – ele parou de cozinhar e perdeu ainda mais peso. A filha insistiu na consulta.
+
+comportamento:
+  estilo_sessao: upset
+  como_responde_abertas: >
+    Fala com detalhes sobre a esposa – momentos felizes, a doença, o sofrimento.
+    Quando perguntado sobre como está, responde "não estou bem, e daí?" ou "a senhora
+    quer que eu minta?".
+  como_responde_pressao: >
+    Se pressionado a "superar" ou "seguir em frente", fecha-se, fica irritado ou diz
+    que ninguém entende. Pode levantar a voz ou ficar em silêncio prolongado.
+  reacao_silencio: >
+    Inicialmente preenche o silêncio com mais lembranças; se o silêncio se mantém,
+    ele reflete, mas pode ficar visivelmente desconfortável e pedir para encerrar.
+  estilo_comunicacao: >
+    Voz baixa, pausada, por vezes entrecortada pelo choro. Educado, mas com tom de
+    resignação. Usa frases curtas quando está emocionado.
+  defesas_tipicas:
+    - idealização da esposa ("ela era perfeita, não tinha defeitos")
+    - isolamento afetivo (evita contato para não sentir a falta)
+    - negação da gravidade do quadro ("é só saudade, passa com o tempo")
+    - racionalização ("já estou velho, não tenho mais o que fazer")
+  resistencias:
+    - minimiza a preocupação da filha ("ela exagera")
+    - evita falar sobre o próprio futuro ou planos
+    - redireciona a conversa para a esposa cada vez que se sente pressionado
+  red_flags:
+    - se o terapeuta sugerir que o luto está demorando ou que ele precisa deixar ir,
+      reage com raiva ou desvalorização
+    - se a filha for mencionada como "controladora", ele pode concordar mas depois
+      se fechar por lealdade
+    - perguntas diretas sobre eventual desejo de morrer geram respostas evasivas,
+      mas ele admite que "não se importaria se não acordasse"
+  alianca_inicial: >
+    Ambivalente. Veio por insistência da filha, mas demonstra alguma abertura por
+    reconhecer que não está bem. A aliança se fortalece quando o terapeuta valida
+    a importância da relação com a esposa sem pressa para "curar". Leva cerca de
+    3 a 4 sessões para confiar e falar sobre a ambivalência (raiva da esposa por
+    ter partido, medo de trair a memória dela).
+
+consciencia:
+  tem_consciencia_de:
+    - que está mais triste e isolado do que antes
+    - que a filha está preocupada
+    - que evita lugares que frequentava com a esposa
+  nao_tem_consciencia_de:
+    - da raiva e frustração em relação à esposa por ter morrido
+    - do medo de reinvestir em novos vínculos (por lealdade ou por medo de nova perda)
+    - de que a idealização protege da dor da ambivalência
+  nunca_revela_spontaneamente:
+    - críticas à esposa (mesmo pequenas)
+    - qualquer desejo de seguir em frente com a vida
+    - pensamentos de menos-valia ou desejo de morte (só sob pressão segura)
+
+gatilhos:
+  intensificam:
+    - menção à esposa pelo nome ou a fotos
+    - perguntas sobre como era a vida antes da doença
+    - falar sobre datas especiais (aniversário de casamento, Natal)
+  fecham:
+    - sugestões de "novo começo" ou "novo relacionamento"
+    - comparação com outras pessoas que superaram perdas
+    - excesso de otimismo do terapeuta
+  invasivos_inicio:
+    - perguntar diretamente sobre raiva da esposa nas primeiras sessões
+    - sugerir que ele precisa de medicação
+    - abordar o desejo de morrer antes de estabelecer vínculo
+
+_uso_interno:
+  diagnostico_hipotese: >
+    Transtorno de Luto Prolongado (CID-11: 6B42). Possível episódio depressivo
+    moderado associado (F32.1) mas o quadro central é o luto complicado, com
+    anseio persistente, preocupação com a falecida, e prejuízo funcional há
+    mais de 12 meses.
+  formulacao_psicodinamica: >
+    Identificação intensa com a esposa (objeto amado que sustentava a autoestima
+    e a sensação de completude). Culpa inconsciente por não ter evitado a morte
+    (fantasia de onipotência). Dificuldade em reinvestir libidinalmente em novos
+    objetos por medo de traição e de nova perda. A idealização protege da raiva
+    e da ambivalência natural do vínculo.
+  formulacao_tcc: >
+    Crenças centrais: "Sem ela sou nada", "Não posso ser feliz novamente",
+    "Se eu seguir em frente estou traindo nosso amor". Comportamentos de evitação
+    (isolar-se, evitar lugares) mantêm a esquiva e impedem a reestruturação
+    cognitiva. O processamento da perda é bloqueado pela repetição ruminativa
+    de memórias idealizadas.
+  crencas_centrais: >
+    "Sou incapaz de viver sem ela." "A vida perdeu o sentido." "Eu deveria ter
+    feito mais (culpa)." "Se eu melhorar, estou desrespeitando a memória dela."
+  padrao_relacional: >
+    Dependência emocional recíproca com a esposa ao longo de 40 anos. Relação
+    com a filha: amorosa porém distante desde a viuvez; evita demonstrar
+    sofrimento para não preocupá-la, mas o afastamento a preocupa ainda mais.
+    Tendência a se isolar quando sob estresse.
+  recursos_genuinos:
+    - capacidade de refletir sobre a relação e sobre si mesmo
+    - boa memória e inteligência preservada
+    - vínculo de confiança com a filha (apesar da distância)
+    - fé religiosa como possível suporte (embora enfraquecida)
+    - abertura para reconhecer que precisa de ajuda, mesmo que contrariado
+  temas_evitados:
+    - críticas ou ambivalência em relação à esposa
+    - possibilidade de um novo relacionamento ou de seguir em frente
+    - raiva pela morte da esposa
+    - pensamentos sobre a própria morte e finitude
+
+metadata:
+  origem: gerado_por_ia
+  baseada_em: >
+    Caso fictício baseado em quadro típico de luto complicado em idoso,
+    com elementos de culpa, idealização e isolamento. Não corresponde a paciente real.
+  criada_em: 2026-04-25
+  revisada_por: "[pendente]"
+  versao_schema: 0.1

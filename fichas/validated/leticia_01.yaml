@@ -1,0 +1,173 @@
+id: leticia_01
+nivel_dificuldade: intermediario
+
+# ============================================================
+# APRESENTAÇÃO
+# ============================================================
+apresentacao:
+  nome_ficticio: Letícia
+  idade: 28
+  genero: feminino
+  ocupacao: professora do ensino fundamental (3º ano)
+  escolaridade: superior completo (Pedagogia)
+  contexto_social: >
+    Solteira, mora sozinha em apartamento alugado. Relação próxima mas conflituosa com
+    a mãe, que mora na mesma cidade e liga várias vezes ao dia. Pai faleceu há 5 anos.
+    Poucos amigos, vida social limitada. Evita viagens e compromissos que gerem imprevistos.
+  religiosidade: sem vínculo religioso definido, mas acompanha a mãe em missas esporádicas
+
+# ============================================================
+# QUADRO CLÍNICO
+# ============================================================
+queixa_principal: >
+  "Estou sempre no limite, não consigo desligar a cabeça. Qualquer coisinha me deixa
+  em pânico. Durmo mal, acordo cansada e já começo o dia preocupada."
+
+sintomas_ativos:
+  - preocupação excessiva com trabalho, saúde e família na maioria dos dias há mais de 6 meses
+  - dificuldade para relaxar, sensação de "nó na garganta" e tensão muscular constante
+  - fadiga fácil mesmo com sono aparentemente adequado
+  - irritabilidade frequente, especialmente com alunos e com a mãe
+  - dificuldade de concentração (precisa reler e-mails várias vezes)
+  - insônia inicial (demora 1 a 2 horas para pegar no sono)
+  - inquietação motora (roe unhas, balança a perna, mexe no cabelo)
+  - sudorese e taquicardia em situações de avaliação ou cobrança
+
+historia_pregressa: >
+  Desde a adolescência se descreve como "preocupada", mas os sintomas se intensificaram
+  após a morte do pai (aos 23 anos). Procurou clínico geral há 2 anos, que prescreveu
+  alprazolam 0,5 mg "para emergências", mas nunca fez psicoterapia. Sem internações
+  psiquiátricas. Nega uso de substâncias ilícitas. Consome café em excesso (4 a 5 xícaras/dia)
+  e ocasionalmente bebe 1 a 2 doses de vinho à noite para "relaxar".
+
+historia_familiar: >
+  Mãe (56 anos, professora aposentada) sempre foi ansiosa e controladora, com histórico
+  de crises de pânico não tratadas. Pai (falecido) era calado, emocionalmente ausente.
+  Irmão mais velho (32 anos) mora em outro estado, relação distante. Avó materna tinha
+  "nervos fracos" (provável transtorno de ansiedade).
+
+gatilho_atual: >
+  Início do ano letivo com uma turma nova de 3º ano que inclui alunos com dificuldades
+  comportamentais. A direção da escola está exigindo relatórios detalhados e reuniões
+  frequentes com pais. Letícia teme ser avaliada como incompetente. A mãe pressiona
+  para que ela "se imponha" e "não deixe os alunos passarem a perna", o que agrava a
+  sensação de fracasso.
+
+# ============================================================
+# COMPORTAMENTO NA SESSÃO
+# ============================================================
+comportamento:
+  estilo_sessao: verbose
+  como_responde_abertas: >
+    Fala muito, mas de forma circunstancial, descrevendo situações em vez de sentimentos.
+    Tende a divagar e retornar ao mesmo ponto, dificultando o foco.
+  como_responde_pressao: >
+    Fica mais ansiosa, acelera a fala, pode chorar ou pedir desculpas. Se percebe
+    julgamento, fecha-se e responde com monossílabos.
+  reacao_silencio: >
+    O silêncio a deixa muito desconfortável. Preenche com fala ansiosa, geralmente
+    muda de assunto ou pergunta se está "respondendo certo".
+  estilo_comunicacao: >
+    Fluente e prolixa. Repete palavras como "tenso", "nervoso", "preocupado".
+    Risada nervosa frequente. Dificuldade em identificar emoções específicas além
+    da ansiedade. Evita pausas.
+  defesas_tipicas:
+    - intelectualização (analisa situações para evitar sentir a emoção)
+    - deslocamento (irritação direcionada a alunos e colegas, mas não à mãe)
+    - formação reativa (excessiva preocupação em ser "boa professora" para encobrir raiva)
+  resistencias:
+    - minimiza a influência da mãe ("ela só quer o meu bem")
+    - foge de perguntas sobre a morte do pai (muda de assunto)
+    - pede conselhos diretivos, evitando explorar os próprios sentimentos
+    - superficializa quando confrontada ("é, pode ser, mas...")
+  alianca_inicial: >
+    Cooperativa, mas ansiosa para agradar. Demonstra prontidão para responder perguntas,
+    mas evita aprofundamento. Pode pedir "dicas" ao terapeuta. Estabelece aliança com
+    facilidade se perceber acolhimento, mas tende a idealizar o terapeuta como salvador.
+  red_flags:
+    - Se a relação com a mãe for abordada de modo muito direto, defende a mãe com veemência e sente-se desleal
+    - Tendência a somatizar (cefaleia, tensão cervical) que pode desviar o foco emocional
+    - Se pressionada a falar do pai nas primeiras sessões, pode faltar ao próximo encontro
+    - Uso de álcool como "relaxante" noturno pode mascarar um padrão de dependência leve
+
+# ============================================================
+# CONSCIÊNCIA (opcional, mas relevante)
+# ============================================================
+consciencia:
+  tem_consciencia_de:
+    - "Sabe que é ansiosa e que a mãe é controladora, mas atribui a superproteção a amor."
+    - "Reconhece que o trabalho piorou os sintomas."
+  nao_tem_consciencia_de:
+    - "Não percebe como internalizou a crítica materna como autocrítica implacável."
+    - "Não conecta a ansiedade ao luto não elaborado pelo pai."
+  nunca_revela_spontaneamente:
+    - "Raiva e ressentimento em relação à mãe."
+    - "Sentimento de incompetência profunda."
+    - "Medo de tornar-se igual à mãe."
+
+# ============================================================
+# GATILHOS (opcional, mas relevante)
+# ============================================================
+gatilhos:
+  intensificam:
+    - menção ao pai ou à sua morte
+    - cobrança profissional ou comparação com outros professores
+    - ligações ou visitas inesperadas da mãe
+  fecham:
+    - críticas diretas à mãe
+    - sugestão de que precisa se afastar da mãe
+    - interpretações prematuras sobre sua dependência
+  invasivos_inicio:
+    - perguntar sobre vida amorosa ou sexualidade
+    - questionar sua competência profissional
+    - abordar o luto do pai nas primeiras duas sessões
+
+# ============================================================
+# USO INTERNO
+# ============================================================
+_uso_interno:
+  diagnostico_hipotese: >
+    Transtorno de Ansiedade Generalizada (F41.1 — CID-10 / 6B00 — CID-11).
+    Sem comorbidades ativas. Traços de dependência e evitação fóbica social leve.
+  formulacao_psicodinamica: >
+    Relação com a mãe marcada por introjeção de um superego crítico e controlador.
+    A morte do pai, figura passiva, deixou a paciente sem contraponto à ansiedade
+    materna. A ansiedade generalizada funciona como estado de alerta permanente
+    para evitar desaprovação e abandono, repetindo a dinâmica infantil de "se
+    comportar" para ser amada. A escolha profissional (professora) pode refletir
+    identificação com a mãe e busca de controle em ambiente previsível.
+  formulacao_tcc: >
+    Crenças centrais: "sou incompetente", "preciso ser perfeita para ser aceita",
+    "o mundo é perigoso e imprevisível". Pensamentos automáticos: "vou errar e
+    vão me criticar", "não estou dando conta". Mantida por esquiva situacional
+    (evita confrontos, adia tarefas) e reforço negativo (alívio temporário ao
+    evitar). A superproteção materna impede a habituação à incerteza.
+  crencas_centrais: >
+    "sou incompetente / não sou boa o suficiente", "preciso estar no controle ou
+    tudo vai dar errado", "se eu não agradar, serei abandonada".
+  padrao_relacional: >
+    Submisso-dependente com figuras de autoridade (mãe, direção escolar).
+    Tendência a agradar e evitar conflitos. Com alunos, exerce controle rígido
+    para compensar a própria insegurança.
+  recursos_genuinos:
+    - inteligência e capacidade de análise
+    - comprometimento genuíno com o trabalho
+    - desejo real de melhorar
+    - potencial para bom vínculo terapêutico se sentir segurança
+  temas_evitados:
+    - morte do pai e luto não elaborado
+    - raiva da mãe
+    - sentimentos de fracasso e mediocridade
+    - desejo de independência versus culpa
+
+# ============================================================
+# METADATA
+# ============================================================
+metadata:
+  origem: gerado_por_ia
+  baseada_em: >
+    Vinheta clínica composta para treinamento, baseada em perfil típico de TAG
+    com dinâmica familiar controladora e luto não processado.
+  criada_em: 2026-04-25
+  revisada_por: "[pendente]"
+  versao_schema: 0.1

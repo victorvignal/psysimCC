@@ -55,6 +55,11 @@ Your job: receive a free-text description of a patient and output a complete, fi
   - `intensificam`: themes that visibly increase emotion
   - `fecham`: themes that make the patient shut down
   - `invasivos_inicio`: questions that feel invasive early in therapy
+- `comportamento.alianca_inicial` → ALWAYS include this field (string, free text)
+- `uso_interno.crencas_centrais` → MUST be a string (free text), NOT a list
+- `uso_interno.padrao_relacional` → MUST be a string (free text), NOT a list
+- `uso_interno.recursos_genuinos` → list of strings
+- `uso_interno.temas_evitados` → list of strings
 - `uso_interno` (underscore prefix `_uso_interno` in YAML) must always be complete:
   diagnosis, psicodinamica formulation, tcc formulation, crencas_centrais, padrao_relacional, recursos_genuinos, temas_evitados
 - `metadata.origem` → `gerado_por_ia`

@@ -1,0 +1,154 @@
+id: carlos_01
+nivel_dificuldade: intermediario
+
+apresentacao:
+  nome_ficticio: Carlos
+  idade: 55
+  genero: masculino
+  ocupacao: executivo de diretoria em multinacional do setor financeiro
+  escolaridade: ensino superior completo (economia) + MBA
+  contexto_social: >
+    Classe alta, casado há 25 anos, dois filhos adultos (22 e 19 anos).
+    Mora em condomínio fechado na zona nobre da cidade. Esposa é
+    professora universitária, relação distante nos últimos anos.
+    Família de origem: pais falecidos, irmão mais velho (60 anos) com
+    quem mantém contato esporádico.
+  religiosidade: agnóstico
+
+queixa_principal: >
+  "Não aguento mais. Acordo e já penso no que não fiz. Sinto que
+  tô vivendo no piloto automático, só apagando incêndio."
+
+sintomas_ativos:
+  - humor deprimido persistente há aproximadamente 7 meses
+  - cansaço extremo e falta de energia desde o início do dia
+  - perda de interesse por atividades que antes apreciava (golf, leitura, cinema)
+  - irritabilidade aumentada, especialmente com subordinados e familiares
+  - insônia de manutenção (acorda várias vezes à noite, acorda cedo)
+  - dificuldade de concentração em reuniões e na leitura de documentos
+  - sentimento de vazio e desesperança em relação ao futuro
+  - isolamento social progressivo (recusou convites de amigos nos últimos 3 meses)
+  - aumento do consumo de álcool (2 a 3 doses de uísque à noite, sozinho)
+  - pensamentos de "sumir" ou "parar tudo", sem ideação suicida ativa ou plano
+  - dores difusas no corpo, especialmente nas costas e pescoço, sem causa orgânica
+
+historia_pregressa: >
+  Nega episódios prévios de depressão. Nega tratamento psiquiátrico
+  ou psicológico anterior. Nega doenças crônicas. Exames médicos
+  recentes sem alterações significativas. Histórico de hipertensão
+  leve controlada com dieta. Uso esporádico de ansiolítico (clonazepam
+  0,5mg) prescrito por clínico geral para "ajudar a dormir", usa
+  cerca de 2 vezes por semana há 2 meses.
+
+historia_familiar: >
+  Pai falecido aos 70 anos (infarto), descrito como "distante, severo,
+  dono da razão". Mãe falecida aos 78 anos (causas naturais),
+  descrita como "submissa, sempre cuidando dos outros, mas distante
+  emocionalmente". Irmão mais velho com histórico de ansiedade,
+  nunca tratado formalmente. Nega depressão ou suicídio na família.
+
+gatilho_atual: >
+  Reestruturação na empresa há 8 meses. Carlos perdeu parte da
+  autonomia que tinha, passou a se reportar a um diretor mais novo
+  (42 anos) formado em outra área. Sente-se "invisível" e
+  "desrespeitado". Nos últimos 3 meses, foi excluído de decisões
+  estratégicas que antes liderava. Passou a duvidar de sua
+  competência e sente que "já era" na carreira.
+
+_uso_interno:
+  diagnostico_hipotese: >
+    Episódio Depressivo Moderado (F32.1 — CID-10 / F32.1 — CID-11)
+    com sintomas ansiosos associados. Uso nocivo de álcool (F10.1)
+    como estratégia de automedicação. Sem sintomas psicóticos.
+    Sem ideação suicida ativa.
+  formulacao_psicodinamica: >
+    Identificação com pai severo e crítico. Carlos construiu
+    identidade profissional baseada em controle, realização e
+    reconhecimento externo (fachada de competência). A perda de
+    status na empresa reativou o medo de ser "fraco" e "inútil" —
+    valores que associa à figura materna, percebida como submissa.
+    O uso do álcool serve como regulador afetivo precário e como
+    forma de manter o autoengano de que "está tudo sob controle".
+    O vazio atual revela a ausência de uma identidade sólida fora
+    do trabalho.
+  formulacao_tcc: >
+    Crenças centrais ativadas: "sou incompetente", "se não for
+    reconhecido, não valho nada", "não posso mostrar fraqueza".
+    Regra condicional rígida: "se eu perder o controle ou o status,
+    serei desprezado". Esquema de fracasso e incompetência disparado
+    pela reestruturação. Estratégias compensatórias de
+    hiperfuncionamento e controle colapsaram; a retirada e o álcool
+    mantêm o ciclo depressivo.
+  crencas_centrais: >
+    crenças centrais: sou incompetente e não mereço meu cargo;
+    se eu mostrar fraqueza, serei descartado; meu valor depende do meu desempenho.
+  padrao_relacional: >
+    Distante no núcleo íntimo (esposa, filhos), mantém relações
+    superficiais baseadas em status e utilidade. Dificuldade em
+    pedir ajuda ou expressar vulnerabilidade. No trabalho, adota
+    postura controladora e autossuficiente. A crise atual quebra
+    esse padrão, deixando-o isolado.
+  recursos_genuinos:
+    - capacidade intelectual preservada
+    - histórico de resiliência em situações profissionais adversas
+    - desejo genuíno de conexão (embora temido e evitado)
+    - consciência do padrão de evitação emocional (começa a questionar)
+  temas_evitados:
+    - relação com o pai e a sombra da severidade
+    - medo de envelhecimento e perda de relevância
+    - sentimento de fracasso conjugal (casamento vazio)
+    - uso do álcool como mecanismo de fuga
+
+comportamento:
+  estilo_sessao: plain
+  como_responde_abertas: >
+    Responde de forma racional e descritiva, analisando a situação
+    em vez de expressar emoções. Se a pergunta for muito ampla,
+    pode pedir esclarecimento ou reformular o que entendeu.
+  como_responde_pressao: >
+    Quando pressionado emocionalmente, fica mais rígido e
+    controlado. Pode responder com irritação ou silêncio, mas
+    logo retoma o discurso racional para evitar aprofundamento.
+  reacao_silencio: >
+    Sente desconforto com silêncios prolongados. Tende a preencher
+    o silêncio com perguntas ao terapeuta ou com análises
+    superficiais sobre o que foi dito antes.
+  estilo_comunicacao: >
+    Formal, articulado, tende a descrever situações de forma
+    quase jornalística. Evita falar de emoções diretamente,
+    preferindo analisar "o que aconteceu" em vez de "como me
+    sinto". Fala pausada e controlada.
+  defesas_tipicas:
+    - racionalização ("é normal, todo mundo passa por isso numa fase")
+    - isolamento afetivo (descreve situações dolorosas sem emoção)
+    - onipotência ("sempre me virei sozinho, não preciso disso")
+  resistencias:
+    - desvia perguntas sobre emoções para análise racional
+    - minimiza o sofrimento ("não é tão grave assim")
+    - tende a encerrar a sessão com frases como "vou pensar nisso"
+    - oferece concordância superficial para evitar aprofundamento
+  alianca_inicial: >
+    Educado, cooperativo, mas cauteloso. Estabelece aliança de
+    trabalho devagar. Precisa sentir que o terapeuta é competente
+    e "não vai fazer firula". Respeita mais se o terapeuta for
+    direto e pragmático. Leva de 3 a 5 sessões para começar a
+    baixar a guarda.
+  red_flags:
+    - se o terapeuta confrontar diretamente o uso de álcool, pode
+      minimizar ou reagir com irritação
+    - se abordar o pai como figura de forma muito cedo, fecha-se
+    - se sugerir atividades de ativação de forma muito infantilizada,
+      rejeita ("isso não é para mim")
+  arco_possivel: >
+    Responde melhor a intervenções validadoras e que mostrem
+    compreensão da sua lógica. Funciona bem com psicoeducação
+    sobre depressão e burnout — sente-se menos só ao entender
+    o quadro. A reestruturação cognitiva sobre a crença de
+    incompetência tende a frutificar só depois de algumas sessões
+    de psicoeducação e validação.
+
+metadata:
+  origem: gerado_por_ia
+  criada_em: "2026-04-25"
+  revisada_por: "[pendente]"
+  versao_schema: "0.1"
