@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframes — Simulador Clínico</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Caveat+Brush&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f5f0e8; font-family: 'Caveat', cursive; }
+
+  /* ── Sketchy base elements ── */
+  .wf { background: #fafaf7; font-family: 'Caveat', cursive; color: #1a1a1a; position: relative; overflow: hidden; }
+
+  .wf-box {
+    border: 2px solid #1a1a1a;
+    border-radius: 3px;
+    position: absolute;
+  }
+  .wf-box.fill { background: #e8e4dc; }
+  .wf-box.dark { background: #1a1a1a; }
+  .wf-box.mid { background: #c9c4bb; }
+  .wf-box.accent { background: #d4e8d4; border-color: #4a7a4a; }
+  .wf-box.accent2 { background: #d4dce8; border-color: #4a5a7a; }
+  .wf-box.warn { background: #f0e0c0; border-color: #8a6a2a; }
+
+  .wf-text {
+    position: absolute;
+    font-family: 'Caveat', cursive;
+    line-height: 1.2;
+    color: #1a1a1a;
+  }
+  .wf-text.sm { font-size: 11px; }
+  .wf-text.md { font-size: 14px; }
+  .wf-text.lg { font-size: 18px; font-weight: 600; }
+  .wf-text.xl { font-size: 22px; font-weight: 700; }
+  .wf-text.muted { color: #888; }
+  .wf-text.mono { font-family: 'Space Mono', monospace; font-size: 10px; }
+
+  .wf-divider {
+    position: absolute;
+    background: #1a1a1a;
+  }
+  .wf-divider.h { height: 2px; }
+  .wf-divider.v { width: 2px; }
+
+  .wf-pill {
+    position: absolute;
+    border: 1.5px solid #1a1a1a;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+  }
+
+  .wf-dot {
+    position: absolute;
+    border-radius: 50%;
+    background: #1a1a1a;
+    width: 6px; height: 6px;
+  }
+
+  .wf-avatar {
+    position: absolute;
+    border: 2px solid #1a1a1a;
+    border-radius: 50%;
+    background: #e8e4dc;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .wf-bubble {
+    position: absolute;
+    border: 2px solid #1a1a1a;
+    border-radius: 12px;
+    background: #fafaf7;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: 'Caveat', cursive;
+    line-height: 1.3;
+  }
+  .wf-bubble.patient { background: #e8e4dc; border-radius: 2px 12px 12px 12px; }
+  .wf-bubble.therapist { background: #d4dce8; border-radius: 12px 2px 12px 12px; }
+  .wf-bubble.supervisor { background: #d4e8d4; border-radius: 12px 12px 12px 2px; }
+
+  .badge {
+    position: absolute;
+    border: 1.5px solid currentColor;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+  .badge.iniciante { color: #4a7a4a; background: #d4e8d4; }
+  .badge.intermediario { color: #7a6a2a; background: #f0e0c0; }
+  .badge.avancado { color: #7a2a2a; background: #f0d4d4; }
+
+  /* hatching for placeholder images */
+  .hatch {
+    position: absolute;
+    background-image: repeating-linear-gradient(
+      45deg, #ccc 0, #ccc 1px, transparent 0, transparent 50%
+    );
+    background-size: 6px 6px;
+    background-color: #e8e4dc;
+    border: 2px solid #aaa;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+<script type="text/babel">
+
+/* ════════════════════════════════════════
+   TELA 1A — Seleção: Card Grid
+════════════════════════════════════════ */
+function Tela1A() {
+  return (
+    <div className="wf" style={{width:800,height:520}}>
+      {/* navbar */}
+      <div className="wf-box dark" style={{left:0,top:0,right:0,width:'100%',height:40}}/>
+      <div className="wf-text" style={{left:16,top:10,color:'#fafaf7',fontSize:16,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{right:16,top:10,color:'#aaa',fontSize:13}}>João da Silva  ▾</div>
+
+      {/* header */}
+      <div className="wf-text xl" style={{left:32,top:60}}>Escolha um paciente</div>
+      <div className="wf-text muted md" style={{left:32,top:90}}>3 fichas disponíveis · nível filtrado: todos</div>
+
+      {/* filters */}
+      <div className="wf-pill" style={{left:32,top:114,width:70,height:24,background:'#1a1a1a',color:'#fafaf7',border:'none'}}>Todos</div>
+      <div className="wf-pill" style={{left:110,top:114,width:90,height:24}}>Iniciante</div>
+      <div className="wf-pill" style={{left:208,top:114,width:110,height:24}}>Intermediário</div>
+      <div className="wf-pill" style={{left:326,top:114,width:86,height:24}}>Avançado</div>
+
+      {/* card 1 — Maria */}
+      <div className="wf-box" style={{left:32,top:152,width:228,height:160,borderRadius:6}}>
+        <div className="wf-box mid" style={{left:0,top:0,width:'100%',height:56,borderRadius:'4px 4px 0 0',position:'relative'}}/>
+        <div className="wf-avatar" style={{left:10,top:30,width:44,height:44}}><span>♀</span></div>
+        <div className="badge iniciante" style={{position:'absolute',right:10,top:10}}>iniciante</div>
+        <div className="wf-text lg" style={{position:'absolute',left:10,top:68}}>Maria, 34</div>
+        <div className="wf-text sm muted" style={{position:'absolute',left:10,top:90}}>analista administrativa</div>
+        <div className="wf-text sm" style={{position:'absolute',left:10,top:108,right:10,lineHeight:'1.3'}}>depressão moderada · 1ª vez em terapia</div>
+        <div className="wf-box accent" style={{position:'absolute',left:10,bottom:12,right:10,height:28,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <span style={{fontSize:13,color:'#3a6a3a',fontWeight:600}}>Iniciar sessão →</span>
+        </div>
+      </div>
+
+      {/* card 2 */}
+      <div className="wf-box" style={{left:276,top:152,width:228,height:160,borderRadius:6}}>
+        <div className="wf-box fill" style={{left:0,top:0,width:'100%',height:56,borderRadius:'4px 4px 0 0',position:'relative',background:'#d4dce8',borderColor:'#4a5a7a'}}/>
+        <div className="wf-avatar" style={{left:10,top:30,width:44,height:44}}><span>♂</span></div>
+        <div className="badge intermediario" style={{position:'absolute',right:10,top:10}}>intermediário</div>
+        <div className="wf-text lg" style={{position:'absolute',left:10,top:68}}>Pedro, 28</div>
+        <div className="wf-text sm muted" style={{position:'absolute',left:10,top:90}}>designer freelancer</div>
+        <div className="wf-text sm" style={{position:'absolute',left:10,top:108,right:10,lineHeight:'1.3'}}>ansiedade social · resistência marcada</div>
+        <div className="wf-box" style={{position:'absolute',left:10,bottom:12,right:10,height:28,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',background:'#fafaf7'}}>
+          <span style={{fontSize:13,fontWeight:600}}>Iniciar sessão →</span>
+        </div>
+      </div>
+
+      {/* card 3 — locked */}
+      <div className="wf-box" style={{left:520,top:152,width:228,height:160,borderRadius:6,opacity:0.5}}>
+        <div className="wf-box fill" style={{left:0,top:0,width:'100%',height:56,borderRadius:'4px 4px 0 0',position:'relative',background:'#f0d4d4',borderColor:'#7a2a2a'}}/>
+        <div className="wf-avatar" style={{left:10,top:30,width:44,height:44}}><span>♀</span></div>
+        <div className="badge avancado" style={{position:'absolute',right:10,top:10}}>avançado</div>
+        <div className="wf-text lg" style={{position:'absolute',left:10,top:68}}>Carla, 45</div>
+        <div className="wf-text sm muted" style={{position:'absolute',left:10,top:90}}>professora, divorciada</div>
+        <div className="wf-text sm" style={{position:'absolute',left:10,top:108,right:10,lineHeight:'1.3'}}>luto patológico · risco simulado</div>
+        <div className="wf-box" style={{position:'absolute',left:10,bottom:12,right:10,height:28,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',background:'#eee'}}>
+          <span style={{fontSize:13,color:'#999'}}>🔒 bloqueado</span>
+        </div>
+      </div>
+
+      {/* bottom — sessões recentes */}
+      <div className="wf-divider h" style={{left:32,right:32,top:336,width:'auto'}}/>
+      <div className="wf-text lg" style={{left:32,top:348}}>Sessões recentes</div>
+      <div className="wf-box fill" style={{left:32,top:376,width:360,height:32,borderRadius:4}}/>
+      <div className="wf-text sm" style={{left:44,top:384}}>Maria · sessão #3 · há 2 dias</div>
+      <div className="wf-text sm muted" style={{right:48,top:384}}>retomar →</div>
+      <div className="wf-box fill" style={{left:32,top:414,width:360,height:32,borderRadius:4}}/>
+      <div className="wf-text sm" style={{left:44,top:422}}>Maria · sessão #2 · há 5 dias</div>
+      <div className="wf-text sm muted" style={{right:48,top:422}}>ver feedback →</div>
+
+      {/* annotation */}
+      <div className="wf-text muted sm" style={{right:32,bottom:16,fontStyle:'italic'}}>← cards desbloqueiam por nível</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 1B — Seleção: Lista densa + preview
+════════════════════════════════════════ */
+function Tela1B() {
+  return (
+    <div className="wf" style={{width:800,height:520}}>
+      {/* navbar */}
+      <div className="wf-box dark" style={{left:0,top:0,width:'100%',height:40}}/>
+      <div className="wf-text" style={{left:16,top:10,color:'#fafaf7',fontSize:16,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{left:100,top:12,color:'#888',fontSize:12}}>Pacientes &nbsp;/&nbsp; Sessões &nbsp;/&nbsp; Progresso</div>
+
+      {/* left list panel */}
+      <div className="wf-divider v" style={{left:300,top:40,height:480}}/>
+
+      <div className="wf-text" style={{left:12,top:52,fontSize:11,fontFamily:'Space Mono, monospace',color:'#888',letterSpacing:'0.1em',textTransform:'uppercase'}}>Fichas disponíveis</div>
+
+      {/* row 1 selected */}
+      <div className="wf-box accent" style={{left:0,top:68,width:298,height:52,border:'none',borderLeft:'3px solid #4a7a4a',borderRadius:0}}/>
+      <div className="wf-avatar" style={{left:8,top:76,width:36,height:36}}><span style={{fontSize:12}}>♀</span></div>
+      <div className="wf-text md" style={{left:52,top:76,fontWeight:700}}>Maria, 34</div>
+      <div className="badge iniciante" style={{position:'absolute',left:52,top:96}}>iniciante</div>
+      <div className="wf-text sm muted" style={{left:130,top:100}}>depressão mod.</div>
+
+      {/* row 2 */}
+      <div className="wf-box" style={{left:0,top:122,width:298,height:52,border:'none',borderBottom:'1px solid #ddd',borderRadius:0,background:'transparent'}}/>
+      <div className="wf-avatar" style={{left:8,top:130,width:36,height:36}}><span style={{fontSize:12}}>♂</span></div>
+      <div className="wf-text md" style={{left:52,top:130}}>Pedro, 28</div>
+      <div className="badge intermediario" style={{position:'absolute',left:52,top:150}}>intermediário</div>
+      <div className="wf-text sm muted" style={{left:148,top:154}}>ansiedade</div>
+
+      {/* row 3 */}
+      <div className="wf-box" style={{left:0,top:176,width:298,height:52,border:'none',borderBottom:'1px solid #ddd',borderRadius:0,background:'transparent',opacity:0.5}}/>
+      <div className="wf-avatar" style={{left:8,top:184,width:36,height:36}}><span style={{fontSize:12}}>♀</span></div>
+      <div className="wf-text md" style={{left:52,top:184}}>Carla, 45</div>
+      <div className="badge avancado" style={{position:'absolute',left:52,top:204}}>avançado</div>
+      <div className="wf-text sm muted" style={{left:148,top:208}}>luto · 🔒</div>
+
+      {/* sessions count */}
+      <div className="wf-divider h" style={{left:0,top:238,width:300}}/>
+      <div className="wf-text" style={{left:12,top:250,fontSize:11,fontFamily:'Space Mono, monospace',color:'#888',letterSpacing:'0.1em',textTransform:'uppercase'}}>Suas sessões</div>
+      <div className="wf-box fill" style={{left:8,top:270,width:282,height:30,borderRadius:4}}/>
+      <div className="wf-text sm" style={{left:16,top:278}}>Maria · #3 · 38min · 2d atrás</div>
+      <div className="wf-box fill" style={{left:8,top:306,width:282,height:30,borderRadius:4}}/>
+      <div className="wf-text sm" style={{left:16,top:314}}>Maria · #2 · 22min · 5d atrás</div>
+      <div className="wf-box fill" style={{left:8,top:342,width:282,height:30,borderRadius:4}}/>
+      <div className="wf-text sm" style={{left:16,top:350}}>Maria · #1 · 15min · 1sem atrás</div>
+
+      {/* right preview panel */}
+      <div className="wf-text" style={{left:316,top:52,fontSize:11,fontFamily:'Space Mono, monospace',color:'#888',letterSpacing:'0.1em',textTransform:'uppercase'}}>Ficha · Maria</div>
+
+      <div className="wf-text lg" style={{left:316,top:76}}>Maria, 34 anos</div>
+      <div className="wf-text sm muted" style={{left:316,top:100}}>analista administrativa · episódio depressivo moderado</div>
+
+      <div className="wf-divider h" style={{left:316,top:120,width:468}}/>
+
+      <div className="wf-text" style={{left:316,top:130,fontSize:11,color:'#888',fontFamily:'Space Mono, monospace'}}>QUEIXA</div>
+      <div className="wf-text sm" style={{left:316,top:146,width:448,lineHeight:'1.4'}}>"Tá difícil até levantar da cama. Não tô dando conta do trabalho e meu marido já tá reclamando que eu virei outra pessoa."</div>
+
+      <div className="wf-text" style={{left:316,top:190,fontSize:11,color:'#888',fontFamily:'Space Mono, monospace'}}>SINTOMAS</div>
+      {['humor deprimido · 4 meses','anedonia marcada','insônia terminal','fadiga constante','autocrítica severa'].map((s,i)=>(
+        <div key={i} className="wf-text sm" style={{left:316,top:206+i*16}}>· {s}</div>
+      ))}
+
+      <div className="wf-text" style={{left:316,top:292,fontSize:11,color:'#888',fontFamily:'Space Mono, monospace'}}>DEFESAS TÍPICAS</div>
+      <div className="wf-text sm" style={{left:316,top:308}}>intelectualização · minimização · racionalização</div>
+
+      <div className="wf-text" style={{left:316,top:338,fontSize:11,color:'#888',fontFamily:'Space Mono, monospace'}}>DIFICULDADE</div>
+      <div className="badge iniciante" style={{position:'absolute',left:316,top:354}}>iniciante</div>
+
+      <div className="wf-box accent" style={{left:316,top:400,width:200,height:40,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute'}}>
+        <span style={{fontSize:16,color:'#3a6a3a',fontWeight:700}}>Iniciar nova sessão →</span>
+      </div>
+      <div className="wf-box" style={{left:528,top:400,width:220,height:40,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute'}}>
+        <span style={{fontSize:16,fontWeight:600}}>Continuar sessão #3 →</span>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 1C — Seleção: Dashboard acadêmico
+════════════════════════════════════════ */
+function Tela1C() {
+  return (
+    <div className="wf" style={{width:800,height:520}}>
+      {/* sidebar */}
+      <div className="wf-box dark" style={{left:0,top:0,width:56,height:520}}/>
+      <div className="wf-text" style={{left:8,top:16,color:'#fafaf7',fontSize:18,fontWeight:700,writingMode:'vertical-rl'}}>psy</div>
+      {['🏠','📋','🎓','📊'].map((icon,i)=>(
+        <div key={i} style={{position:'absolute',left:12,top:70+i*44,fontSize:22,opacity: i===0?1:0.5}}>{icon}</div>
+      ))}
+
+      {/* main */}
+      <div className="wf-text xl" style={{left:72,top:20}}>Olá, João 👋</div>
+      <div className="wf-text muted md" style={{left:72,top:50}}>Turma: Psicologia Clínica I · 6º período</div>
+
+      {/* stats row */}
+      {[
+        {label:'sessões',value:'7'},
+        {label:'horas de prática',value:'3h40'},
+        {label:'feedbacks recebidos',value:'5'},
+        {label:'pacientes atendidos',value:'1'},
+      ].map((s,i)=>(
+        <div key={i}>
+          <div className="wf-box fill" style={{left:72+i*178,top:76,width:168,height:60,borderRadius:4}}/>
+          <div className="wf-text" style={{left:84+i*178,top:84,fontSize:26,fontWeight:700}}>{s.value}</div>
+          <div className="wf-text sm muted" style={{left:84+i*178,top:114}}>{s.label}</div>
+        </div>
+      ))}
+
+      <div className="wf-divider h" style={{left:72,top:148,width:712}}/>
+
+      {/* patient cards compact */}
+      <div className="wf-text" style={{left:72,top:158,fontSize:11,fontFamily:'Space Mono, monospace',color:'#888',letterSpacing:'0.1em',textTransform:'uppercase'}}>Pacientes disponíveis</div>
+
+      {[
+        {name:'Maria, 34',diag:'depressão mod.',nivel:'iniciante',sessions:3,bg:'#d4e8d4',bc:'#4a7a4a'},
+        {name:'Pedro, 28',diag:'ansiedade social',nivel:'intermediário',sessions:0,bg:'#d4dce8',bc:'#4a5a7a'},
+        {name:'Carla, 45',diag:'luto patológico',nivel:'avançado',sessions:0,bg:'#f0d4d4',bc:'#7a2a2a',locked:true},
+      ].map((p,i)=>(
+        <div key={i} className="wf-box" style={{left:72,top:180+i*80,width:460,height:68,borderRadius:6,borderLeft:`4px solid ${p.bc}`,background:p.locked?'#f5f5f5':'#fafaf7',opacity:p.locked?0.6:1}}>
+          <div className="wf-text lg" style={{position:'absolute',left:14,top:10}}>{p.name}</div>
+          <div className="wf-text sm muted" style={{position:'absolute',left:14,top:34}}>{p.diag}</div>
+          <div className="badge" style={{position:'absolute',right:100,top:24,color:p.bc,background:p.bg}}>{p.nivel}</div>
+          {p.locked
+            ? <div className="wf-text sm muted" style={{position:'absolute',right:14,top:28}}>🔒 bloqueado</div>
+            : <div className="wf-text md" style={{position:'absolute',right:14,top:26,color:'#3a6a3a',fontWeight:700}}>{p.sessions > 0 ? `#${p.sessions} sessões →` : 'iniciar →'}</div>
+          }
+        </div>
+      ))}
+
+      {/* progress */}
+      <div className="wf-box fill" style={{left:548,top:168,width:236,height:232,borderRadius:6}}/>
+      <div className="wf-text" style={{left:560,top:178,fontSize:11,fontFamily:'Space Mono, monospace',color:'#888',letterSpacing:'0.1em',textTransform:'uppercase'}}>Progresso · Maria</div>
+      <div className="wf-text md" style={{left:560,top:200}}>Acolhimento</div>
+      <div className="wf-box" style={{left:560,top:218,width:200,height:10,borderRadius:5,background:'#ddd',border:'none'}}/>
+      <div className="wf-box" style={{left:560,top:218,width:140,height:10,borderRadius:5,background:'#4a7a4a',border:'none'}}/>
+      <div className="wf-text md" style={{left:560,top:236}}>Formulação</div>
+      <div className="wf-box" style={{left:560,top:254,width:200,height:10,borderRadius:5,background:'#ddd',border:'none'}}/>
+      <div className="wf-box" style={{left:560,top:254,width:80,height:10,borderRadius:5,background:'#7a6a2a',border:'none'}}/>
+      <div className="wf-text md" style={{left:560,top:272}}>Manejo de resistência</div>
+      <div className="wf-box" style={{left:560,top:290,width:200,height:10,borderRadius:5,background:'#ddd',border:'none'}}/>
+      <div className="wf-box" style={{left:560,top:290,width:50,height:10,borderRadius:5,background:'#c0392b',border:'none'}}/>
+      <div className="wf-text md" style={{left:560,top:308}}>Técnica</div>
+      <div className="wf-box" style={{left:560,top:326,width:200,height:10,borderRadius:5,background:'#ddd',border:'none'}}/>
+      <div className="wf-box" style={{left:560,top:326,width:120,height:10,borderRadius:5,background:'#4a5a7a',border:'none'}}/>
+      <div className="wf-text muted sm" style={{left:560,top:346}}>baseado em 3 sessões supervisionadas</div>
+
+      {/* annotation */}
+      <div className="wf-text muted sm" style={{left:72,bottom:14,fontStyle:'italic'}}>← dashboard mostra progresso acumulado por competência</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 2A — Sessão: Chat + painel direito
+════════════════════════════════════════ */
+function Tela2A() {
+  return (
+    <div className="wf" style={{width:900,height:580}}>
+      {/* topbar */}
+      <div className="wf-box dark" style={{left:0,top:0,width:'100%',height:44}}/>
+      <div className="wf-text" style={{left:16,top:12,color:'#fafaf7',fontSize:14,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{left:80,top:12,color:'#aaa',fontSize:13}}>Maria, 34 · Sessão #4 · 00:12:34</div>
+      <div className="wf-pill" style={{right:100,top:10,width:90,height:24,background:'#d4e8d4',borderColor:'#4a7a4a',color:'#3a6a3a',fontSize:11,position:'absolute'}}>● gravando</div>
+      <div className="wf-pill" style={{right:12,top:10,width:80,height:24,background:'#f0e0c0',borderColor:'#8a6a2a',color:'#7a4a1a',fontSize:11,position:'absolute'}}>supervisão</div>
+
+      {/* supervisor strip */}
+      <div className="wf-box" style={{left:0,top:44,width:'100%',height:32,background:'#d4e8d4',borderColor:'#4a7a4a',borderRadius:0}}/>
+      <div className="wf-text sm" style={{left:12,top:52,color:'#2a5a2a'}}>🎓 Supervisor: <strong>boa abertura — lembre de explorar o contexto antes de avançar</strong></div>
+
+      {/* left chat area */}
+      <div className="wf-divider v" style={{left:580,top:76,height:504}}/>
+
+      <div className="wf-text" style={{left:12,top:84,fontSize:11,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Sessão</div>
+
+      {/* messages */}
+      <div className="wf-bubble patient" style={{left:12,top:104,width:320}}>Oi... entrei porque meu marido ficou preocupado. Não sei bem o que falar.</div>
+      <div className="wf-text muted sm" style={{left:12,top:148}}>Maria · 00:01</div>
+
+      <div className="wf-bubble therapist" style={{right:20,top:164,width:280,position:'absolute'}}>Oi Maria, que bom que você veio. Pode falar no seu tempo, tudo bem.</div>
+      <div className="wf-text muted sm" style={{right:20,top:210,position:'absolute'}}>Você · 00:02</div>
+
+      <div className="wf-bubble patient" style={{left:12,top:228,width:360}}>É que eu tô me sentindo uma estranha em mim mesma. Sabe? Tipo... faço as coisas no automático.</div>
+      <div className="wf-text muted sm" style={{left:12,top:280}}>Maria · 00:04</div>
+
+      <div className="wf-bubble therapist" style={{right:20,top:300,width:300,position:'absolute'}}>Quando você diz "estranha em mim mesma"... pode me contar mais sobre isso?</div>
+      <div className="wf-text muted sm" style={{right:20,top:342,position:'absolute'}}>Você · 00:06</div>
+
+      <div className="wf-bubble patient" style={{left:12,top:358,width:340,fontStyle:'italic',color:'#666'}}>Maria está digitando...</div>
+
+      {/* input */}
+      <div className="wf-box fill" style={{left:12,top:466,width:548,height:44,borderRadius:6}}/>
+      <div className="wf-text muted md" style={{left:24,top:481}}>Digite sua resposta terapêutica...</div>
+      <div className="wf-box accent" style={{right:20,top:470,width:80,height:36,borderRadius:6,position:'absolute',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <span style={{fontSize:14,color:'#3a6a3a',fontWeight:700}}>enviar</span>
+      </div>
+
+      {/* right panel */}
+      <div className="wf-text" style={{left:592,top:84,fontSize:11,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Painel lateral</div>
+
+      {/* tabs */}
+      {['Ficha','Notas','Supervisor'].map((t,i)=>(
+        <div key={i} className="wf-pill" style={{left:592+i*96,top:100,width:88,height:26,background:i===0?'#1a1a1a':'transparent',color:i===0?'#fafaf7':'#555',fontSize:12}}>
+          {t}
+        </div>
+      ))}
+
+      {/* ficha content */}
+      <div className="wf-text" style={{left:592,top:136,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>queixa principal</div>
+      <div className="wf-text sm" style={{left:592,top:150,width:286,lineHeight:'1.4'}}>"Tá difícil até levantar da cama..."</div>
+      <div className="wf-text" style={{left:592,top:180,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>sintomas ativos</div>
+      {['humor deprimido · 4m','anedonia marcada','insônia terminal','fadiga · autocrítica'].map((s,i)=>(
+        <div key={i} className="wf-text sm" style={{left:592,top:196+i*16}}>· {s}</div>
+      ))}
+      <div className="wf-text" style={{left:592,top:266,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>defesas</div>
+      {['intelectualização','minimização','racionalização'].map((s,i)=>(
+        <div key={i} className="wf-pill" style={{left:592+(i>1?0:i*100),top:282+(i>1?26:0),width:94,height:22,fontSize:10}}>
+          {s}
+        </div>
+      ))}
+      <div className="wf-text" style={{left:592,top:330,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>temas a evitar (sessões iniciais)</div>
+      <div className="wf-box warn" style={{left:592,top:346,width:286,height:22,borderRadius:4}}/>
+      <div className="wf-text sm" style={{left:598,top:350,color:'#6a4a1a'}}>⚠ figura paterna — aguardar abertura</div>
+
+      <div className="wf-text" style={{left:592,top:378,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>notas pessoais</div>
+      <div className="wf-box fill" style={{left:592,top:394,width:286,height:80,borderRadius:4}}/>
+      <div className="wf-text muted sm" style={{left:600,top:420}}>escreva observações aqui...</div>
+
+      <div className="wf-text muted sm" style={{left:12,bottom:14,fontStyle:'italic'}}>← tab "Supervisor" abre painel em tempo real</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 2B — Sessão: 3 colunas
+════════════════════════════════════════ */
+function Tela2B() {
+  return (
+    <div className="wf" style={{width:1000,height:580}}>
+      {/* topbar */}
+      <div className="wf-box dark" style={{left:0,top:0,width:'100%',height:40}}/>
+      <div className="wf-text" style={{left:16,top:10,color:'#fafaf7',fontSize:14,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{left:80,top:12,color:'#aaa',fontSize:12}}>Maria · Sessão #4 · 12:34</div>
+      <div className="wf-pill" style={{right:12,top:8,width:110,height:24,background:'#f0e0c0',borderColor:'#8a6a2a',color:'#7a4a1a',fontSize:11,position:'absolute'}}>encerrar sessão</div>
+
+      {/* 3 columns */}
+      <div className="wf-divider v" style={{left:260,top:40,height:540}}/>
+      <div className="wf-divider v" style={{left:720,top:40,height:540}}/>
+
+      {/* col 1 — ficha */}
+      <div className="wf-text" style={{left:10,top:50,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase',letterSpacing:'0.1em'}}>Ficha clínica</div>
+      <div className="wf-text md" style={{left:10,top:66,fontWeight:700}}>Maria, 34</div>
+      <div className="badge iniciante" style={{position:'absolute',left:10,top:90}}>iniciante</div>
+      <div className="wf-divider h" style={{left:10,top:116,width:238}}/>
+
+      <div className="wf-text" style={{left:10,top:124,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>queixa</div>
+      <div className="wf-text sm" style={{left:10,top:138,width:238,lineHeight:'1.4'}}>"Tá difícil até levantar da cama. Não tô dando conta..."</div>
+
+      <div className="wf-text" style={{left:10,top:178,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>sintomas</div>
+      {['↓ humor · 4 meses','anedonia · anhedonia','insônia terminal','fadiga','autocrítica severa'].map((s,i)=>(
+        <div key={i} className="wf-text sm" style={{left:10,top:192+i*16}}>· {s}</div>
+      ))}
+
+      <div className="wf-text" style={{left:10,top:278,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>defesas</div>
+      {['intelectualização','minimização','racionalização'].map((s,i)=>(
+        <div key={i} className="wf-pill" style={{left:10+(i%2)*128,top:294+(Math.floor(i/2))*28,width:120,height:22,fontSize:10}}>{s}</div>
+      ))}
+
+      <div className="wf-box warn" style={{left:10,top:360,width:238,height:30,borderRadius:4}}/>
+      <div className="wf-text sm" style={{left:16,top:368,color:'#6a4a1a'}}>⚠ não pressionar sobre pai cedo</div>
+
+      {/* col 2 — chat */}
+      <div className="wf-text" style={{left:272,top:50,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Conversa</div>
+
+      <div className="wf-bubble patient" style={{left:272,top:68,width:300}}>Oi... entrei porque meu marido ficou preocupado.</div>
+      <div className="wf-bubble therapist" style={{left:340,top:118,width:280}}>Que bom que veio. Pode falar no seu tempo.</div>
+      <div className="wf-bubble patient" style={{left:272,top:168,width:330}}>Eu tô me sentindo uma estranha em mim mesma. Faço as coisas no automático.</div>
+      <div className="wf-bubble therapist" style={{left:340,top:232,width:280}}>Quando diz "estranha"... pode me contar mais?</div>
+      <div className="wf-bubble patient" style={{left:272,top:278,width:310}}>É difícil explicar. (pausa) Tipo, ontem fiz o almoço, comi, fui trabalhar — e quando percebi já era noite.</div>
+      <div className="wf-bubble patient" style={{left:272,top:342,width:200,fontStyle:'italic',color:'#888',background:'transparent',border:'1.5px dashed #bbb'}}>digitando...</div>
+
+      {/* input */}
+      <div className="wf-box fill" style={{left:272,top:474,width:430,height:40,borderRadius:6}}/>
+      <div className="wf-text muted sm" style={{left:282,top:487}}>Sua fala terapêutica...</div>
+      <div className="wf-box accent" style={{left:710,top:474,width:0,height:40,borderRadius:6,display:'none'}}/>
+
+      {/* col 3 — supervisor */}
+      <div className="wf-text" style={{left:730,top:50,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Supervisor em tempo real</div>
+      <div className="badge iniciante" style={{position:'absolute',left:730,top:68,color:'#4a5a7a',background:'#d4dce8',borderColor:'#4a5a7a'}}>TCC</div>
+
+      <div className="wf-box" style={{left:730,top:92,width:258,height:58,borderRadius:6,background:'#d4e8d4',borderColor:'#4a7a4a'}}/>
+      <div className="wf-text sm" style={{left:738,top:98,width:242,lineHeight:'1.35',color:'#2a5a2a'}}>✓ <strong>boa abertura.</strong> Você validou sem minimizar — importante para aliança inicial.</div>
+
+      <div className="wf-box" style={{left:730,top:158,width:258,height:58,borderRadius:6,background:'#f0e0c0',borderColor:'#8a6a2a'}}/>
+      <div className="wf-text sm" style={{left:738,top:164,width:242,lineHeight:'1.35',color:'#6a4a1a'}}>⚠ <strong>observe:</strong> Maria começou a intelectualizar. Tente uma pergunta experiencial antes de avançar.</div>
+
+      <div className="wf-box" style={{left:730,top:224,width:258,height:58,borderRadius:6,background:'#d4dce8',borderColor:'#4a5a7a'}}/>
+      <div className="wf-text sm" style={{left:738,top:230,width:242,lineHeight:'1.35',color:'#2a3a6a'}}>💡 <strong>sugestão:</strong> "Quando você diz automático — tem alguma coisa que se sente diferente hoje?" pode aprofundar.</div>
+
+      <div className="wf-divider h" style={{left:730,top:294,width:258}}/>
+      <div className="wf-text" style={{left:730,top:302,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Notas pessoais</div>
+      <div className="wf-box fill" style={{left:730,top:318,width:258,height:120,borderRadius:4}}/>
+      <div className="wf-text muted sm" style={{left:738,top:348}}>anote observações...</div>
+
+      <div className="wf-text" style={{left:730,top:448,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Abordagem</div>
+      {['TCC','Psicodinâmica','Humanista'].map((a,i)=>(
+        <div key={i} className="wf-pill" style={{left:730+i*88,top:464,width:82,height:22,fontSize:11,background:i===0?'#1a1a1a':'transparent',color:i===0?'#fafaf7':'#555',position:'absolute'}}>{a}</div>
+      ))}
+
+      <div className="wf-text muted sm" style={{left:10,bottom:10,fontStyle:'italic'}}>← layout 3 colunas: ficha sempre visível · supervisor em tempo real</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 2C — Sessão: foco no chat, supervisor colapsável
+════════════════════════════════════════ */
+function Tela2C() {
+  return (
+    <div className="wf" style={{width:860,height:580}}>
+      {/* topbar */}
+      <div className="wf-box dark" style={{left:0,top:0,width:'100%',height:44}}/>
+      <div className="wf-text" style={{left:16,top:12,color:'#fafaf7',fontSize:14,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{left:80,top:13,color:'#aaa',fontSize:12}}>Maria · Sessão #4</div>
+      <div className="wf-text" style={{left:200,top:13,color:'#4a7a4a',fontSize:12}}>● 00:12:34</div>
+      <div className="wf-pill" style={{right:200,top:10,width:100,height:24,color:'#4a5a7a',background:'#d4dce8',borderColor:'#4a5a7a',fontSize:11,position:'absolute'}}>📋 ficha</div>
+      <div className="wf-pill" style={{right:96,top:10,width:96,height:24,color:'#4a7a4a',background:'#d4e8d4',borderColor:'#4a7a4a',fontSize:11,position:'absolute'}}>🎓 supervisor</div>
+      <div className="wf-pill" style={{right:12,top:10,width:76,height:24,color:'#888',background:'transparent',fontSize:11,position:'absolute'}}>encerrar</div>
+
+      {/* chat — wide, centered */}
+      <div style={{position:'absolute',left:80,right:80,top:56,bottom:76}}>
+        <div className="wf-text" style={{left:0,top:12,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Sessão com Maria</div>
+
+        <div className="wf-bubble patient" style={{left:0,top:34,width:380}}>Oi... meu marido ficou preocupado. Não sei bem o que falar.</div>
+        <div className="wf-bubble therapist" style={{right:0,top:80,width:320,position:'absolute'}}>Que bom que você veio. Pode falar no seu tempo.</div>
+        <div className="wf-bubble patient" style={{left:0,top:138,width:440}}>Eu tô me sentindo uma estranha em mim mesma. Faço as coisas no automático.</div>
+        <div className="wf-bubble therapist" style={{right:0,top:196,width:360,position:'absolute'}}>Quando você diz "estranha"... pode me contar mais sobre isso?</div>
+        <div className="wf-bubble patient" style={{left:0,top:256,width:440}}>É difícil explicar. Ontem fiz o almoço, trabalhei — quando percebi já era noite. Não lembro como cheguei em casa.</div>
+
+        {/* supervisor nota flutuante — inline */}
+        <div className="wf-box" style={{left:0,top:324,width:700,height:48,borderRadius:6,background:'#d4e8d4',borderColor:'#4a7a4a'}}>
+          <div className="wf-text sm" style={{left:10,top:8,color:'#2a5a2a'}}>🎓 Supervisor · </div>
+          <div className="wf-text sm" style={{left:90,top:8,color:'#1a1a1a',fontWeight:600}}>boa pergunta experiencial. Maria começou a aprofundar — siga esse fio.</div>
+          <div className="wf-text muted sm" style={{left:10,top:26,color:'#5a8a5a',fontSize:10}}>aparecem inline, sob a fala do paciente relevante</div>
+        </div>
+
+        <div className="wf-bubble patient" style={{left:0,top:382,width:380,fontStyle:'italic',color:'#888',background:'transparent',border:'1.5px dashed #bbb'}}>digitando...</div>
+      </div>
+
+      {/* input bar */}
+      <div className="wf-box fill" style={{left:80,right:160,bottom:16,height:48,position:'absolute',borderRadius:8}}/>
+      <div className="wf-text muted md" style={{left:96,bottom:28}}>Sua resposta terapêutica...</div>
+      <div className="wf-box accent" style={{right:80,bottom:16,width:72,height:48,position:'absolute',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <span style={{fontSize:18,color:'#3a6a3a'}}>→</span>
+      </div>
+
+      <div className="wf-text muted sm" style={{left:16,bottom:4,fontStyle:'italic'}}>← painéis abrem como overlay ao clicar nos botões do topo</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 3A — Supervisão: tela dedicada pós-sessão
+════════════════════════════════════════ */
+function Tela3A() {
+  return (
+    <div className="wf" style={{width:860,height:600}}>
+      <div className="wf-box dark" style={{left:0,top:0,width:'100%',height:40}}/>
+      <div className="wf-text" style={{left:16,top:10,color:'#fafaf7',fontSize:14,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{left:80,top:12,color:'#aaa',fontSize:12}}>← voltar &nbsp;/&nbsp; Maria · Sessão #4 · Supervisão</div>
+
+      <div className="wf-divider v" style={{left:520,top:40,height:560}}/>
+
+      {/* left — transcript */}
+      <div className="wf-text" style={{left:12,top:50,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Transcrição anotada</div>
+
+      {[
+        {who:'Maria',text:'Oi... meu marido ficou preocupado. Não sei bem o que falar.',mark:null},
+        {who:'Você',text:'Que bom que você veio. Pode falar no seu tempo.',mark:'✓ acolhimento adequado'},
+        {who:'Maria',text:'Tô me sentindo uma estranha em mim mesma. Faço as coisas no automático.',mark:null},
+        {who:'Você',text:'Quando você diz estranha... pode me contar mais?',mark:'✓ pergunta aberta, exploratória'},
+        {who:'Maria',text:'É difícil explicar. Ontem fiz o almoço, trabalhei — quando percebi já era noite.',mark:null},
+        {who:'Você',text:'E o que você sente agora quando conta isso pra mim?',mark:'⚠ precipitado — aliança ainda frágil'},
+      ].map((m,i)=>(
+        <div key={i}>
+          <div className="wf-text" style={{left:12,top:70+i*70,fontSize:10,fontFamily:'Space Mono, monospace',color:m.who==='Você'?'#4a5a7a':'#555'}}>{m.who.toUpperCase()}</div>
+          <div className="wf-text sm" style={{left:12,top:84+i*70,width:490,lineHeight:'1.35'}}>{m.text}</div>
+          {m.mark && (
+            <div className="wf-box" style={{left:12,top:108+i*70,width:490,height:20,borderRadius:3,
+              background: m.mark.startsWith('✓') ? '#d4e8d4' : '#f0e0c0',
+              borderColor: m.mark.startsWith('✓') ? '#4a7a4a' : '#8a6a2a'
+            }}>
+              <div className="wf-text sm" style={{left:6,top:2,color: m.mark.startsWith('✓') ? '#2a5a2a' : '#6a4a1a'}}>{m.mark}</div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* right — rubrica */}
+      <div className="wf-text" style={{left:532,top:50,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Feedback estruturado · TCC</div>
+
+      {[
+        {dim:'Acolhimento e aliança',score:4,max:5,cor:'#4a7a4a',obs:'Abertura empática. Evite avançar para exploração emocional antes de consolidar aliança.'},
+        {dim:'Formulação de caso',score:2,max:5,cor:'#c0392b',obs:'Nenhuma hipótese formulada explicitamente. Tente conectar queixa a padrão cognitivo.'},
+        {dim:'Técnicas de entrevista',score:3,max:5,cor:'#7a6a2a',obs:'Boas perguntas abertas. Uma intervenção foi precipitada (turn 6).'},
+        {dim:'Manejo de resistência',score:3,max:5,cor:'#7a6a2a',obs:'Maria começou a intelectualizar — você notou mas não nomeou o padrão.'},
+      ].map((d,i)=>(
+        <div key={i}>
+          <div className="wf-text md" style={{left:532,top:76+i*106,fontWeight:700}}>{d.dim}</div>
+          <div style={{position:'absolute',left:532,top:98+i*106,display:'flex',gap:4}}>
+            {Array.from({length:d.max},(_,j)=>(
+              <div key={j} style={{width:28,height:28,border:`2px solid ${d.cor}`,borderRadius:4,background: j<d.score ? d.cor : 'transparent'}}/>
+            ))}
+          </div>
+          <div className="wf-text sm muted" style={{left:532,top:132+i*106,width:316,lineHeight:'1.3'}}>{d.obs}</div>
+        </div>
+      ))}
+
+      <div className="wf-box accent" style={{left:532,top:524,width:200,height:36,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute'}}>
+        <span style={{fontSize:14,color:'#3a6a3a',fontWeight:700}}>salvar e voltar</span>
+      </div>
+
+      <div className="wf-text muted sm" style={{left:12,bottom:10,fontStyle:'italic'}}>← transcrição com anotações inline · rubrica por dimensão à direita</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 3B — Supervisão: drawer lateral (tempo real)
+════════════════════════════════════════ */
+function Tela3B() {
+  return (
+    <div className="wf" style={{width:1000,height:580}}>
+      {/* chat faded */}
+      <div className="wf-box dark" style={{left:0,top:0,width:'100%',height:44}}/>
+      <div className="wf-text" style={{left:16,top:12,color:'#fafaf7',fontSize:14,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{left:80,top:13,color:'#aaa',fontSize:12}}>Maria · Sessão #4 · 00:14:22</div>
+
+      {/* dimmed chat behind */}
+      <div style={{position:'absolute',left:0,top:44,width:560,bottom:0,opacity:0.3}}>
+        <div className="wf-bubble patient" style={{left:20,top:20,width:320}}>Oi... meu marido ficou preocupado.</div>
+        <div className="wf-bubble therapist" style={{left:80,top:70,width:280}}>Que bom que você veio.</div>
+        <div className="wf-bubble patient" style={{left:20,top:120,width:380}}>Tô me sentindo uma estranha...</div>
+        <div className="wf-bubble therapist" style={{left:80,top:178,width:300}}>Pode me contar mais sobre isso?</div>
+        <div className="wf-bubble patient" style={{left:20,top:228,width:400}}>É difícil explicar. Ontem fiz o almoço...</div>
+      </div>
+      {/* scrim */}
+      <div style={{position:'absolute',left:0,top:44,width:560,bottom:0,background:'rgba(250,250,247,0.7)'}}/>
+
+      {/* supervisor drawer */}
+      <div className="wf-box" style={{left:520,top:44,width:480,height:536,borderLeft:'3px solid #4a7a4a',borderRadius:0,background:'#fafaf7'}}>
+        <div className="wf-box accent" style={{left:0,top:0,width:'100%',height:44,border:'none',borderBottom:'2px solid #4a7a4a',borderRadius:0}}/>
+        <div className="wf-text" style={{left:14,top:12,fontSize:14,fontWeight:700,color:'#2a5a2a'}}>🎓 Supervisor em tempo real · TCC</div>
+        <div className="wf-pill" style={{right:12,top:10,width:22,height:22,background:'#1a1a1a',color:'#fafaf7',border:'none',fontSize:14,position:'absolute'}}>×</div>
+
+        {/* live feedback items */}
+        {[
+          {type:'✓',color:'#2a5a2a',bg:'#d4e8d4',bc:'#4a7a4a',time:'00:02',title:'acolhimento adequado',body:'Abertura empática sem minimizar. Alinhado com TCC — continua assim nas próximas falas.'},
+          {type:'💡',color:'#2a3a6a',bg:'#d4dce8',bc:'#4a5a7a',time:'00:08',title:'oportunidade técnica',body:'Maria usou "automático" — isso é acesso à cognição automática. Poderia explorar: "o que passa pela sua cabeça nesses momentos?"'},
+          {type:'⚠',color:'#6a4a1a',bg:'#f0e0c0',bc:'#8a6a2a',time:'00:12',title:'precipitação',body:'Intervenção de sentimentos na turn 6 foi cedo demais. Aliança não consolidada — recue para validação.'},
+        ].map((f,i)=>(
+          <div key={i} className="wf-box" style={{left:12,top:58+i*130,width:452,height:118,borderRadius:6,background:f.bg,borderColor:f.bc}}>
+            <div className="wf-text" style={{left:10,top:8,fontSize:10,fontFamily:'Space Mono, monospace',color:f.color,textTransform:'uppercase'}}>{f.type} {f.title}</div>
+            <div className="wf-text muted sm" style={{right:10,top:10,position:'absolute',fontFamily:'Space Mono, monospace',fontSize:10}}>{f.time}</div>
+            <div className="wf-text sm" style={{left:10,top:28,width:430,lineHeight:'1.45',color:'#1a1a1a'}}>{f.body}</div>
+            <div className="wf-text muted" style={{left:10,bottom:8,fontSize:10,fontFamily:'Space Mono, monospace'}}>reagir: 👍 útil &nbsp; 🤔 discordo &nbsp; 🚩 ignorar</div>
+          </div>
+        ))}
+
+        <div className="wf-divider h" style={{left:12,top:452,width:452}}/>
+        <div className="wf-text" style={{left:12,top:462,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Abordagem</div>
+        {['TCC','Psicodinâmica','Humanista'].map((a,i)=>(
+          <div key={i} className="wf-pill" style={{left:12+i*108,top:478,width:100,height:26,fontSize:12,background:i===0?'#1a1a1a':'transparent',color:i===0?'#fafaf7':'#555',position:'absolute'}}>{a}</div>
+        ))}
+        <div className="wf-text" style={{left:12,top:514,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Feedback gerado automaticamente · editar após sessão</div>
+      </div>
+
+      <div className="wf-text muted sm" style={{left:12,bottom:8,fontStyle:'italic'}}>← drawer abre pela direita durante a sessão · fecha sem perder contexto</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   TELA 3C — Supervisão: relatório acadêmico
+════════════════════════════════════════ */
+function Tela3C() {
+  return (
+    <div className="wf" style={{width:860,height:620}}>
+      <div className="wf-box dark" style={{left:0,top:0,width:'100%',height:40}}/>
+      <div className="wf-text" style={{left:16,top:10,color:'#fafaf7',fontSize:14,fontWeight:700}}>psysim</div>
+      <div className="wf-text" style={{left:80,top:12,color:'#aaa',fontSize:12}}>← Sessões &nbsp;/&nbsp; Relatório de Supervisão</div>
+      <div className="wf-pill" style={{right:12,top:8,width:80,height:24,background:'transparent',borderColor:'#aaa',color:'#aaa',fontSize:11,position:'absolute'}}>exportar PDF</div>
+
+      {/* header */}
+      <div className="wf-box fill" style={{left:0,top:40,width:'100%',height:60,borderRadius:0}}/>
+      <div className="wf-text xl" style={{left:20,top:50}}>Maria · Sessão #4</div>
+      <div className="wf-text muted sm" style={{left:20,top:78,fontFamily:'Space Mono, monospace'}}>24 abr 2026 · 14min · abordagem: TCC · supervisor: IA (DeepSeek)</div>
+      <div className="badge iniciante" style={{position:'absolute',right:120,top:56}}>iniciante</div>
+
+      {/* three columns below */}
+      <div className="wf-divider v" style={{left:300,top:100,height:500}}/>
+      <div className="wf-divider v" style={{left:580,top:100,height:500}}/>
+
+      {/* col 1 — rubrica */}
+      <div className="wf-text" style={{left:12,top:108,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Rubrica (MITI adaptada)</div>
+      {[
+        {dim:'Empatia e validação',n:4,d:5,c:'#4a7a4a'},
+        {dim:'Formulação de caso',n:2,d:5,c:'#c0392b'},
+        {dim:'Técnica de entrevista',n:3,d:5,c:'#7a6a2a'},
+        {dim:'Manejo resistência',n:3,d:5,c:'#7a6a2a'},
+        {dim:'Aliança terapêutica',n:4,d:5,c:'#4a7a4a'},
+        {dim:'Planejamento terapêutico',n:1,d:5,c:'#c0392b'},
+      ].map((r,i)=>(
+        <div key={i}>
+          <div className="wf-text sm" style={{left:12,top:126+i*56}}>{r.dim}</div>
+          <div style={{position:'absolute',left:12,top:142+i*56,display:'flex',gap:3}}>
+            {Array.from({length:r.d},(_,j)=>(
+              <div key={j} style={{width:22,height:22,border:`2px solid ${r.c}`,borderRadius:3,background:j<r.n?r.c:'transparent'}}/>
+            ))}
+            <span style={{marginLeft:4,fontSize:13,fontFamily:'Space Mono, monospace',color:'#555',alignSelf:'center'}}>{r.n}/{r.d}</span>
+          </div>
+        </div>
+      ))}
+
+      {/* col 2 — pontos fortes/fracos */}
+      <div className="wf-text" style={{left:312,top:108,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Análise narrativa</div>
+
+      <div className="wf-text" style={{left:312,top:128,fontSize:12,fontWeight:700}}>O que funcionou</div>
+      {['Abertura empática, sem minimizar','Pergunta aberta após fala chave','Permitiu silêncios'].map((s,i)=>(
+        <div key={i} className="wf-text sm" style={{left:312,top:148+i*18}}>✓ {s}</div>
+      ))}
+
+      <div className="wf-text" style={{left:312,top:210,fontSize:12,fontWeight:700}}>A desenvolver</div>
+      {['Formulação explícita do caso','Identificar padrão cognitivo central','Evitar intervenção emocional prematura'].map((s,i)=>(
+        <div key={i} className="wf-text sm" style={{left:312,top:228+i*18}}>△ {s}</div>
+      ))}
+
+      <div className="wf-divider h" style={{left:312,top:286,width:256}}/>
+
+      <div className="wf-text" style={{left:312,top:296,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Próxima sessão — sugestões</div>
+      {['Ativação comportamental leve (registro de atividades)','Explorar contexto da promoção com cuidado','Não abordar tema paterno ainda'].map((s,i)=>(
+        <div key={i} className="wf-box" style={{left:312,top:314+i*52,width:256,height:44,borderRadius:4,background:'#f0f0e8',border:'1.5px solid #ccc'}}>
+          <div className="wf-text sm" style={{left:8,top:6,width:240,lineHeight:'1.3'}}>{s}</div>
+        </div>
+      ))}
+
+      {/* col 3 — progresso histórico */}
+      <div className="wf-text" style={{left:592,top:108,fontSize:10,fontFamily:'Space Mono, monospace',color:'#888',textTransform:'uppercase'}}>Evolução histórica</div>
+      <div className="wf-text muted sm" style={{left:592,top:124}}>Empatia e validação por sessão</div>
+
+      {/* mini spark chart */}
+      <div style={{position:'absolute',left:592,top:142}}>
+        {[2,3,3,4].map((v,i)=>(
+          <div key={i} style={{position:'absolute',left:i*52,bottom:0,width:40,height:v*16,background:'#4a7a4a',borderRadius:'2px 2px 0 0',border:'1.5px solid #3a6a3a'}}/>
+        ))}
+        {['#1','#2','#3','#4'].map((l,i)=>(
+          <div key={i} className="wf-text sm muted" style={{position:'absolute',left:i*52+6,top:70}}>{l}</div>
+        ))}
+      </div>
+
+      <div className="wf-text muted sm" style={{left:592,top:228}}>Formulação de caso</div>
+      <div style={{position:'absolute',left:592,top:244}}>
+        {[1,1,2,2].map((v,i)=>(
+          <div key={i} style={{position:'absolute',left:i*52,bottom:0,width:40,height:v*16,background:'#c0392b',borderRadius:'2px 2px 0 0',border:'1.5px solid #a03020'}}/>
+        ))}
+        {['#1','#2','#3','#4'].map((l,i)=>(
+          <div key={i} className="wf-text sm muted" style={{position:'absolute',left:i*52+6,top:38}}>{l}</div>
+        ))}
+      </div>
+
+      <div className="wf-divider h" style={{left:592,top:312,width:256}}/>
+      <div className="wf-text muted sm" style={{left:592,top:322}}>4 sessões &nbsp;·&nbsp; 1h12min total</div>
+
+      <div className="wf-box accent" style={{left:592,top:348,width:200,height:34,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute'}}>
+        <span style={{fontSize:13,color:'#3a6a3a',fontWeight:700}}>ver progresso completo</span>
+      </div>
+
+      <div className="wf-box" style={{left:592,top:392,width:200,height:34,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute'}}>
+        <span style={{fontSize:13,fontWeight:600}}>iniciar sessão #5 →</span>
+      </div>
+
+      <div className="wf-text muted sm" style={{left:12,bottom:8,fontStyle:'italic'}}>← relatório completo, exportável como PDF · usado pelo supervisor humano</div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   APP ROOT
+════════════════════════════════════════ */
+function App() {
+  return (
+    <DesignCanvas title="Wireframes — Simulador Clínico" subtitle="3 telas × 3 variações · sketchy lo-fi">
+      <DCSection id="s1" title="Tela 1 — Seleção de Paciente">
+        <DCArtboard id="1a" label="1A · Cards de pacientes" width={800} height={520}><Tela1A/></DCArtboard>
+        <DCArtboard id="1b" label="1B · Lista + preview lateral" width={800} height={520}><Tela1B/></DCArtboard>
+        <DCArtboard id="1c" label="1C · Dashboard acadêmico" width={800} height={520}><Tela1C/></DCArtboard>
+      </DCSection>
+
+      <DCSection id="s2" title="Tela 2 — Sessão (chat com paciente)">
+        <DCArtboard id="2a" label="2A · Chat + painel de abas" width={900} height={580}><Tela2A/></DCArtboard>
+        <DCArtboard id="2b" label="2B · 3 colunas: ficha | chat | supervisor" width={1000} height={580}><Tela2B/></DCArtboard>
+        <DCArtboard id="2c" label="2C · Chat wide + painéis overlay" width={860} height={580}><Tela2C/></DCArtboard>
+      </DCSection>
+
+      <DCSection id="s3" title="Tela 3 — Supervisão e Feedback">
+        <DCArtboard id="3a" label="3A · Transcrição anotada + rubrica" width={860} height={600}><Tela3A/></DCArtboard>
+        <DCArtboard id="3b" label="3B · Drawer lateral em tempo real" width={1000} height={580}><Tela3B/></DCArtboard>
+        <DCArtboard id="3c" label="3C · Relatório acadêmico completo" width={860} height={620}><Tela3C/></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+<div id="root"></div>
+</body>
+</html>

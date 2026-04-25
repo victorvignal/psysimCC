@@ -2,14 +2,17 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml .
+RUN pip install --no-cache-dir uv && uv pip install --system -r pyproject.toml 2>/dev/null || \
+    pip install --no-cache-dir \
+    "openai>=1.0.0" "httpx>=0.27" "pyyaml>=6.0" "python-dotenv>=1.0" \
+    "pydantic>=2.0" "supabase>=2.25.1" "fastapi>=0.115" \
+    "uvicorn[standard]>=0.30" "sse-starlette>=2.1"
 
 COPY . .
 
-EXPOSE 7860
+EXPOSE 8000
 
-ENV PYTHONPATH=/app \
-    CHAINLIT_NO_TELEMETRY=1
+ENV PYTHONPATH=/app
 
-CMD ["chainlit", "run", "src/app.py", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]

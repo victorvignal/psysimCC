@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ── Design tokens ─────────────────────────────────────── */
+:root {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Superfícies */
+  --bg:       #f5f0e8;
+  --surface:  #fafaf7;
+  --border:   #e2ddd6;
+  --border-subtle: #ede9e2;
+
+  /* Texto */
+  --text:        #1a1a1a;
+  --text-muted:  #6b6560;
+  --text-faint:  #a09890;
+
+  /* Navbar */
+  --nav-bg:   #1a1a1a;
+  --nav-text: #fafaf7;
+
+  /* Semânticas — nível / tipo */
+  --green-bg:  #d4e8d4;
+  --green-fg:  #4a7a4a;
+  --blue-bg:   #d4dce8;
+  --blue-fg:   #4a5a7a;
+  --yellow-bg: #f0e0c0;
+  --yellow-fg: #8a6a2a;
+  --red-bg:    #f0d4d4;
+  --red-fg:    #7a2a2a;
+
+  /* Bubbles */
+  --bubble-patient:    #ede9e2;
+  --bubble-therapist:  #d4dce8;
+  --bubble-supervisor: #d4e8d4;
+}
+
+@theme inline {
+  --color-bg:             var(--bg);
+  --color-surface:        var(--surface);
+  --color-border:         var(--border);
+  --color-border-subtle:  var(--border-subtle);
+  --color-text:           var(--text);
+  --color-text-muted:     var(--text-muted);
+  --color-text-faint:     var(--text-faint);
+  --color-nav:            var(--nav-bg);
+  --color-green-bg:       var(--green-bg);
+  --color-green-fg:       var(--green-fg);
+  --color-blue-bg:        var(--blue-bg);
+  --color-blue-fg:        var(--blue-fg);
+  --color-yellow-bg:      var(--yellow-bg);
+  --color-yellow-fg:      var(--yellow-fg);
+  --color-red-bg:         var(--red-bg);
+  --color-red-fg:         var(--red-fg);
+  --color-bubble-patient:    var(--bubble-patient);
+  --color-bubble-therapist:  var(--bubble-therapist);
+  --color-bubble-supervisor: var(--bubble-supervisor);
+}
+
+/* ── Base ────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.font-mono,
+.mono {
+  font-family: var(--font-mono), monospace;
+}
+
+/* label estilo Space Mono pequeno */
+.label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}

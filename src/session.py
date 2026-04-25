@@ -12,6 +12,7 @@ from rich.prompt import Confirm, Prompt
 from src.ficha_loader import load_ficha
 from src.patient_agent import PatientAgent
 from src.supervisor_agent import APPROACHES, SupervisorAgent
+from src.timer import SessionTimer
 from src.voice import PatientVoice, voice_for_ficha
 
 console = Console()
@@ -29,30 +30,59 @@ def save_session(ficha_id: str, history: list[dict[str, str]]) -> Path:
     return path
 
 
-def run_session(ficha_path: str, voice: bool = False) -> None:
+def run_session(ficha_path: str, voice: bool = False, timer_minutes: int = 0) -> None:
     ficha = load_ficha(ficha_path)
     agent = PatientAgent(ficha)
     nome = ficha.apresentacao.nome_ficticio
     tts: Optional[PatientVoice] = voice_for_ficha(ficha.apresentacao.genero) if voice else None
+    timer: Optional[SessionTimer] = SessionTimer(timer_minutes) if timer_minutes > 0 else None
 
     mode_hint = "  [bold magenta]🔊 voz ativa[/bold magenta]" if voice else ""
+    timer_hint = f"  [bold blue]⏱ {timer_minutes} min[/bold blue]" if timer else ""
+    timer_cmds = "\n[dim]'t' = ver timer  |  'p' = pausar/retomar[/dim]" if timer else ""
     console.print(Panel(
-        f"[bold]Paciente:[/bold] {nome}  |  [bold]Nível:[/bold] {ficha.nivel_dificuldade}{mode_hint}\n"
-        "[dim]Digite 'sair' para encerrar a sessão[/dim]",
+        f"[bold]Paciente:[/bold] {nome}  |  [bold]Nível:[/bold] {ficha.nivel_dificuldade}{mode_hint}{timer_hint}\n"
+        f"[dim]Digite 'sair' para encerrar a sessão[/dim]{timer_cmds}",
         title="[bold cyan]Simulador Clínico[/bold cyan]",
         border_style="cyan",
     ))
     console.print()
 
     while True:
+        if timer:
+            if timer.check_threshold(10):
+                console.print("[bold yellow]⏱ Restam 10 minutos.[/bold yellow]\n")
+            elif timer.check_threshold(5):
+                console.print("[bold yellow]⏱ Restam 5 minutos.[/bold yellow]\n")
+            elif timer.check_threshold(1):
+                console.print("[bold red]⏱ Último minuto![/bold red]\n")
+
+            if timer.expired:
+                console.print(Panel(
+                    f"[bold]Tempo encerrado.[/bold] Duração: {timer.elapsed_str}",
+                    border_style="red",
+                ))
+                break
+
         try:
             entrada = Prompt.ask("[bold green]Terapeuta[/bold green]")
         except (KeyboardInterrupt, EOFError):
             break
 
-        if entrada.strip().lower() in {"sair", "quit", "exit"}:
+        cmd = entrada.strip().lower()
+
+        if cmd in {"sair", "quit", "exit"}:
             break
-        if not entrada.strip():
+        if not cmd:
+            continue
+
+        if timer and cmd == "t":
+            console.print(f"[dim]{timer.status_line()}[/dim]\n")
+            continue
+
+        if timer and cmd == "p":
+            paused = timer.toggle()
+            console.print(f"[dim]{'⏸ Timer pausado.' if paused else '▶ Timer retomado.'}[/dim]\n")
             continue
 
         with console.status(f"[dim]{nome} está pensando...[/dim]"):
@@ -103,8 +133,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Simulador Clínico")
     parser.add_argument("ficha", nargs="?", default="fichas/validated/maria_01.yaml")
     parser.add_argument("--voice", action="store_true", help="Ativa TTS via Minimax")
+    parser.add_argument("--timer", type=int, default=0, metavar="MIN", help="Duração da sessão em minutos (0 = sem limite)")
     args = parser.parse_args()
-    run_session(args.ficha, voice=args.voice)
+    run_session(args.ficha, voice=args.voice, timer_minutes=args.timer)
 
 
 if __name__ == "__main__":

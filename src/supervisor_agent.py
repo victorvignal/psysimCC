@@ -1,5 +1,7 @@
+import json
 import os
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAI
@@ -18,6 +20,50 @@ APPROACHES: dict[str, str] = {
 }
 
 
+RUBRICA_DIMENSOES = [
+    "Empatia e validação",
+    "Formulação de caso",
+    "Técnica de entrevista",
+    "Manejo de resistência",
+    "Aliança terapêutica",
+    "Planejamento terapêutico",
+]
+
+
+@dataclass
+class DimensaoRubrica:
+    nome: str
+    score: int        # 1–5
+    justificativa: str
+
+
+def _build_rubrica_prompt(ficha: Ficha, approach_key: str) -> str:
+    a = ficha.apresentacao
+    approach_desc = APPROACHES.get(approach_key, approach_key)
+    dims = "\n".join(f"- {d}" for d in RUBRICA_DIMENSOES)
+    return f"""Você é um supervisor clínico avaliando uma sessão de treino.
+
+Contexto do caso:
+- Paciente: {a.nome_ficticio}, {a.idade} anos, {a.genero}, {a.ocupacao}
+- Queixa: {ficha.queixa_principal}
+- Abordagem avaliada: {approach_key} — {approach_desc}
+
+Avalie a sessão nas dimensões abaixo com nota de 1 a 5 e justificativa de 1–2 frases baseada EXCLUSIVAMENTE no que apareceu na transcrição.
+
+Escala: 1 = ausente/inadequado · 2 = insuficiente · 3 = adequado · 4 = bom · 5 = excelente
+
+Dimensões:
+{dims}
+
+Retorne APENAS JSON válido, sem texto fora do JSON:
+{{
+  "dimensoes": [
+    {{"nome": "...", "score": N, "justificativa": "..."}},
+    ...
+  ]
+}}"""
+
+
 def _format_transcript(nome: str, history: list[dict[str, str]]) -> str:
     lines = []
     for turn in history:
@@ -27,33 +73,18 @@ def _format_transcript(nome: str, history: list[dict[str, str]]) -> str:
 
 
 def _build_system_prompt(ficha: Ficha, approach_key: str) -> str:
-    ui = ficha.uso_interno
     a = ficha.apresentacao
     approach_desc = APPROACHES.get(approach_key, approach_key)
 
-    diagnostico = ui.diagnostico_hipotese if ui else "não disponível"
-    psicodinamica = ui.formulacao_psicodinamica if ui else "não disponível"
-    tcc_form = ui.formulacao_tcc if ui else "não disponível"
-    temas = ", ".join(ui.temas_evitados) if (ui and ui.temas_evitados) else "não especificados"
-
     return f"""Você é um supervisor clínico experiente conduzindo uma revisão pós-sessão com um estudante de psicologia em formação.
 
-## Referência clínica privada (use apenas como lente — não revele diretamente)
+## Contexto do caso
 
-Você tem acesso ao caso completo para calibrar sua supervisão, mas sua análise deve se basear EXCLUSIVAMENTE no que apareceu na transcrição. Use esta referência para:
-- Reconhecer a relevância clínica do que o paciente disse ou sinalizou
-- Identificar quando o terapeuta passou por cima de algo importante que o paciente trouxe
-- Avaliar se as intervenções estavam alinhadas com o quadro real
+Você sabe apenas o que qualquer supervisor saberia antes de ver a sessão: os dados de apresentação do paciente e a queixa que o trouxe até aqui. Sua análise deve se basear EXCLUSIVAMENTE no que apareceu na transcrição — não faça inferências a partir de informações que o paciente não trouxe na sessão.
 
-Nunca mencione diagnóstico, formulação ou temas que o paciente não sinalizou na sessão. Se algo do caso completo não apareceu na conversa, não existe para esta supervisão.
-
-**Referência (confidencial):**
+**Apresentação:**
 - Paciente: {a.nome_ficticio}, {a.idade} anos, {a.genero}, {a.ocupacao}
-- Queixa: {ficha.queixa_principal}
-- Hipótese diagnóstica: {diagnostico}
-- Formulação psicodinâmica: {psicodinamica}
-- Formulação TCC: {tcc_form}
-- Temas que o paciente tende a evitar: {temas}
+- Queixa principal: {ficha.queixa_principal}
 
 ## Abordagem sendo avaliada
 
@@ -83,7 +114,7 @@ Reescreva uma troca-chave da sessão (3–5 turnos) demonstrando como ficaria co
 
 ---
 
-Tom: acolhedor, educativo, direto. Apenas o que está na transcrição existe para você."""
+Tom: acolhedor, educativo, direto. Tudo o que você sabe sobre o paciente além dos dados de apresentação acima vem da transcrição — nada mais."""
 
 
 class SupervisorAgent:
@@ -109,6 +140,29 @@ class SupervisorAgent:
             ],
         )
         return resp.choices[0].message.content or ""
+
+    def get_rubrica(
+        self, ficha: Ficha, history: list[dict[str, str]], approach: str
+    ) -> list[DimensaoRubrica]:
+        transcript = _format_transcript(ficha.apresentacao.nome_ficticio, history)
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": _build_rubrica_prompt(ficha, approach)},
+                {"role": "user", "content": f"Transcrição:\n\n{transcript}"},
+            ],
+            response_format={"type": "json_object"},
+        )
+        raw = resp.choices[0].message.content or "{}"
+        data = json.loads(raw)
+        return [
+            DimensaoRubrica(
+                nome=d["nome"],
+                score=max(1, min(5, int(d["score"]))),
+                justificativa=d.get("justificativa", ""),
+            )
+            for d in data.get("dimensoes", [])
+        ]
 
     async def supervise_stream(
         self, ficha: Ficha, history: list[dict[str, str]], approach: str
