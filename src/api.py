@@ -169,7 +169,7 @@ async def send_message(session_id: str, req: MessageRequest) -> dict:
 
 
 @app.post("/api/sessions/{session_id}/supervise")
-async def supervise(session_id: str, req: SuperviseRequest):
+async def supervise(session_id: str):
     state = _sessions.get(session_id)
     if not state:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
@@ -177,10 +177,11 @@ async def supervise(session_id: str, req: SuperviseRequest):
         raise HTTPException(status_code=400, detail="Nenhuma conversa para supervisionar")
 
     supervisor = SupervisorAgent()
+    approach = state.approach or "TCC"
 
     async def generate():
         full = ""
-        async for token in supervisor.supervise_stream(state.ficha, state.agent.history, req.approach):
+        async for token in supervisor.supervise_stream(state.ficha, state.agent.history, approach):
             full += token
             yield {"data": json.dumps({"type": "token", "content": token})}
         state.last_supervision = full
