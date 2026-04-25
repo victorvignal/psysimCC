@@ -145,12 +145,14 @@ export function streamMessage(
       buf += decoder.decode(value, { stream: true });
       const lines = buf.split("\n");
       buf = lines.pop() ?? "";
+      let finished = false;
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
         const payload = JSON.parse(line.slice(6));
         if (payload.type === "token") onToken(payload.content);
-        if (payload.type === "done") onDone();
+        if (payload.type === "done") { onDone(); finished = true; }
       }
+      if (finished) { reader.cancel(); break; }
     }
   }).catch(() => {});
 
@@ -181,12 +183,14 @@ export function streamSupervision(
       buf += decoder.decode(value, { stream: true });
       const lines = buf.split("\n");
       buf = lines.pop() ?? "";
+      let finished = false;
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
         const payload = JSON.parse(line.slice(6));
         if (payload.type === "token") onToken(payload.content);
-        if (payload.type === "done") onDone();
+        if (payload.type === "done") { onDone(); finished = true; }
       }
+      if (finished) { reader.cancel(); break; }
     }
   }).catch(() => {});
 
