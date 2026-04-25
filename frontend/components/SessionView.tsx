@@ -30,6 +30,10 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [streaming, setStreaming] = useState(false);
   const [timer, setTimer] = useState<TimerInfo | null>(null);
   const [showTimer, setShowTimer] = useState(false);
+  const [supervisionMode, setSupervisionMode] = useState<"realtime" | "session" | "last3" | null>(null);
+  const [supervisionPanelOpen, setSupervisionPanelOpen] = useState(false);
+  const [supervisionContent, setSupervisionContent] = useState("");
+  const [supervisionLoading, setSupervisionLoading] = useState(false);
   const [notes, setNotes] = useState("");
   const [approach, setApproach] = useState("TCC");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -67,8 +71,68 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   }
 
   async function handleToggleTimer() {
-    const result = await toggleTimer(sessionId);
-    setTimer((t) => t ? { ...t, is_paused: result.is_paused, elapsed_str: result.elapsed_str } : t);
+    if (!timer) {
+      // Start the timer if not running
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/sessions/${sessionId}/timer/start`, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          setTimer(data.timer);
+          setShowTimer(true);
+        }
+      } catch { /* ignore */ }
+      return;
+    }
+    setShowTimer(v => !v);
+  }
+
+  function getHistorySlice(mode: "realtime" | "session" | "last3") {
+    if (mode === "session") return null; // all history
+    if (mode === "last3") return Math.max(0, messages.length - 6); // last 3 exchanges = 6 messages
+    return Math.max(0, messages.length - 4); // realtime = last 2 exchanges = 4 messages
+  }
+
+  async function handleSupervise(mode: "realtime" | "session" | "last3") {
+    setSupervisionMode(mode);
+    setSupervisionPanelOpen(true);
+    setSupervisionContent("");
+    setSupervisionLoading(true);
+
+    // Build the history to send
+    const startFrom = getHistorySlice(mode);
+    const historyToSend = startFrom !== null ? messages.slice(startFrom) : messages;
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/sessions/${sessionId}/supervise-preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approach, mode, history: historyToSend }),
+      });
+      if (!res.ok) throw new Error("Erro na supervisão");
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("Sem stream");
+      const decoder = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const payload = JSON.parse(line.slice(6).trim());
+            if (payload.type === "token") setSupervisionContent((c) => c + payload.content);
+            if (payload.type === "done") { reader.cancel(); break; }
+          } catch { /* ignora */ }
+        }
+      }
+    } catch {
+      setSupervisionContent("Erro ao gerar supervisão. Tente novamente.");
+    } finally {
+      setSupervisionLoading(false);
+    }
   }
 
   function handleEnd() {
@@ -97,7 +161,10 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
       {/* Topbar */}
       <header className="h-11 px-5 flex items-center gap-3 shrink-0"
         style={{ background: "var(--nav-bg)", color: "var(--nav-text)" }}>
-        <span className="font-bold text-sm tracking-tight">psysim</span>
+        <button onClick={() => router.push("/")}
+          className="font-bold text-sm tracking-tight hover:opacity-80 transition-opacity">
+          psysim
+        </button>
         <span style={{ background: "var(--surface)", width: 1, opacity: 0.15 }} className="h-4" />
         <span className="text-sm" style={{ color: "rgba(250,250,247,0.7)" }}>{session.nome}</span>
         <span className="text-xs font-mono px-1.5 py-0.5 rounded"
@@ -109,17 +176,17 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
         </span>
 
         <div className="ml-auto flex items-center gap-1">
-          {timer && (
+          {(showTimer || timer) && (
             <>
-              <button onClick={() => setShowTimer(v => !v)}
+              <button onClick={handleToggleTimer}
                 className="text-xs font-mono px-2.5 h-7 rounded transition-colors"
                 style={{
                   background: showTimer ? "rgba(255,255,255,0.15)" : "transparent",
                   color: showTimer ? "var(--nav-text)" : "rgba(250,250,247,0.5)",
                 }}>
-                {showTimer ? `⏱ ${timer.elapsed_str}` : "⏱"}
+                ⏱ {showTimer && timer ? timer.elapsed_str : ""}
               </button>
-              {showTimer && (
+              {showTimer && timer && (
                 <button onClick={handleToggleTimer}
                   className="text-xs font-mono px-2.5 h-7 rounded transition-colors"
                   style={{ background: "rgba(255,255,255,0.1)", color: "var(--nav-text)" }}>
@@ -128,6 +195,42 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
               )}
             </>
           )}
+
+          {supervisionPanelOpen ? (
+            <>
+              {/* Mode selector inline in navbar */}
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-mono" style={{ color: "rgba(250,250,247,0.4)" }}>supervisão:</span>
+                <button onClick={() => handleSupervise("realtime")}
+                  className="text-xs font-mono px-2 h-7 rounded transition-colors"
+                  style={{ background: "rgba(255,255,255,0.12)", color: "var(--nav-text)" }}>
+                  🎯实时
+                </button>
+                <button onClick={() => handleSupervise("session")}
+                  className="text-xs font-mono px-2 h-7 rounded transition-colors"
+                  style={{ background: "rgba(255,255,255,0.12)", color: "var(--nav-text)" }}>
+                  📋sessão
+                </button>
+                <button onClick={() => handleSupervise("last3")}
+                  className="text-xs font-mono px-2 h-7 rounded transition-colors"
+                  style={{ background: "rgba(255,255,255,0.12)", color: "var(--nav-text)" }}>
+                  ⏪trocas
+                </button>
+              </div>
+              <button onClick={() => setSupervisionPanelOpen(false)}
+                className="text-xs font-mono px-2 h-7 rounded transition-colors"
+                style={{ color: "rgba(250,250,247,0.5)" }}>
+                ✕
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setSupervisionPanelOpen(true)}
+              className="text-xs font-mono px-2.5 h-7 rounded transition-colors hover:bg-white/10"
+              style={{ color: "rgba(250,250,247,0.5)" }}>
+              🎓
+            </button>
+          )}
+
           <div className="w-px h-4 mx-1" style={{ background: "rgba(255,255,255,0.12)" }} />
           <button onClick={handleEnd}
             className="text-xs font-mono px-3 h-7 rounded border transition-colors hover:bg-white/10"
@@ -138,16 +241,22 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
       </header>
 
       {/* Timer bar */}
-      {timer && showTimer && (
+      {showTimer && (
         <div className="h-8 px-5 flex items-center gap-5 shrink-0 text-xs font-mono"
           style={{ background: "#111", color: "rgba(250,250,247,0.5)", borderBottom: "1px solid #2a2a2a" }}>
-          <span>Decorrido <strong style={{ color: "var(--nav-text)" }}>{timer.elapsed_str}</strong></span>
-          {timer.remaining_str && (
-            <span>Restam <strong style={{ color: timer.expired ? "var(--red-fg)" : "var(--nav-text)" }}>
-              {timer.remaining_str}
-            </strong></span>
+          {timer ? (
+            <>
+              <span>Decorrido <strong style={{ color: "var(--nav-text)" }}>{timer.elapsed_str}</strong></span>
+              {timer.remaining_str && (
+                <span>Restam <strong style={{ color: timer.expired ? "var(--red-fg)" : "var(--nav-text)" }}>
+                  {timer.remaining_str}
+                </strong></span>
+              )}
+              {timer.is_paused && <span style={{ color: "var(--yellow-fg)" }}>⏸ pausado</span>}
+            </>
+          ) : (
+            <span style={{ color: "rgba(250,250,247,0.4)" }}>timer não configurado</span>
           )}
-          {timer.is_paused && <span style={{ color: "var(--yellow-fg)" }}>⏸ pausado</span>}
         </div>
       )}
 
@@ -277,6 +386,57 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
             />
           </div>
         </aside>
+
+        {/* Supervision panel — right drawer */}
+        {supervisionPanelOpen && (
+          <div className="w-80 shrink-0 flex flex-col overflow-hidden"
+            style={{ background: "var(--surface)", borderLeft: "1px solid var(--border)" }}>
+
+            {/* Header */}
+            <div className="px-4 py-3 flex items-center justify-between"
+              style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              <p className="label">Supervisor IA</p>
+              <button onClick={() => setSupervisionPanelOpen(false)}
+                className="text-xs font-mono text-faint hover:text-default transition-colors">✕</button>
+            </div>
+
+            {/* Mode buttons */}
+            {!supervisionContent && !supervisionLoading && (
+              <div className="px-4 py-4">
+                <p className="text-xs font-mono mb-1" style={{ color: "var(--text-faint)" }}>
+                  Escolha um modo na barra superior 🎓
+                </p>
+                <p className="text-xs font-mono mt-2" style={{ color: "var(--text-faint)" }}>
+                  Abordagem: <span className="font-bold">{approach}</span>
+                </p>
+              </div>
+            )}
+
+            {/* Loading state */}
+            {supervisionLoading && (
+              <div className="flex-1 flex items-center justify-center">
+                <span className="text-xs font-mono animate-pulse" style={{ color: "var(--text-faint)" }}>
+                  gerando supervisão...
+                </span>
+              </div>
+            )}
+
+            {/* Content */}
+            {supervisionContent && !supervisionLoading && (
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                <div className="prose prose-xs max-w-none"
+                  style={{ fontSize: "0.8rem", lineHeight: "1.5" }}>
+                  <div style={{ color: "var(--text)" }}>{supervisionContent}</div>
+                </div>
+                <button onClick={() => { setSupervisionContent(""); setSupervisionMode(null); }}
+                  className="mt-3 text-xs font-mono px-3 py-2 rounded-lg border transition-colors"
+                  style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
+                  Nova supervisão
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

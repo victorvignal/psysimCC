@@ -178,6 +178,11 @@ export async function sendMessage(
   return data.content as string;
 }
 
+export async function startTimer(sessionId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}/timer/start`, { method: "POST" });
+  if (!res.ok) throw new Error("Erro ao iniciar timer");
+}
+
 export function streamSupervision(
   sessionId: string,
   approach: string,
@@ -187,6 +192,22 @@ export function streamSupervision(
   return makeStreamer(
     `${BASE}/api/sessions/${sessionId}/supervise`,
     { approach },
+    onToken,
+    onDone
+  );
+}
+
+export function streamSupervisionPreview(
+  sessionId: string,
+  approach: string,
+  mode: string,
+  history: Array<{ role: string; content: string }>,
+  onToken: (t: string) => void,
+  onDone: () => void
+): () => void {
+  return makeStreamer(
+    `${BASE}/api/sessions/${sessionId}/supervise-preview`,
+    { approach, mode, history },
     onToken,
     onDone
   );

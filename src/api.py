@@ -96,8 +96,10 @@ class MessageRequest(BaseModel):
     content: str
 
 
-class SuperviseRequest(BaseModel):
+class SupervisePreviewRequest(BaseModel):
     approach: str = "TCC"
+    mode: str = "session"
+    history: list[dict[str, str]]
 
 
 # ── Endpoints ─────────────────────────────────────────────────
@@ -220,10 +222,32 @@ def get_session(session_id: str) -> dict:
 @app.post("/api/sessions/{session_id}/timer/toggle")
 def toggle_timer(session_id: str) -> dict:
     state = _sessions.get(session_id)
-    if not state or not state.timer:
+    if not state:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    if not state.timer:
         raise HTTPException(status_code=404, detail="Timer não configurado")
     paused = state.timer.toggle()
     return {"is_paused": paused, "elapsed_str": state.timer.elapsed_str}
+
+
+@app.post("/api/sessions/{session_id}/timer/start")
+def start_timer(session_id: str) -> dict:
+    """Inicia o timer com duration padrão (30 min) se ainda não existir."""
+    state = _sessions.get(session_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    if not state.timer:
+        state.timer = SessionTimer(30)  # default 30 min
+    if state.timer.is_paused:
+        state.timer.toggle()
+    timer_info = {
+        "elapsed_str": state.timer.elapsed_str,
+        "remaining_str": state.timer.remaining_str,
+        "is_paused": state.timer.is_paused,
+        "expired": state.timer.expired,
+        "duration_minutes": state.timer.duration_minutes,
+    }
+    return {"timer": timer_info}
 
 
 @app.post("/api/sessions/{session_id}/rubric")
@@ -256,8 +280,30 @@ def end_session(session_id: str) -> dict:
     return {"turns": turns}
 
 
-@app.post("/api/sessions/{session_id}/supervise-save")
-async def supervise_and_save(session_id: str, req: SuperviseRequest):
+@app.post("/api/sessions/{session_id}/supervise-preview")
+async def supervise_preview(session_id: str, req: SupervisePreviewRequest):
+    """Supervisão em tempo real — aceita histórico diretamente do frontend.
+    Modos:
+      - realtime: últimas 2 trocas (4 mensagens)
+      - session: toda a conversa
+      - last3: últimas 3 trocas (6 mensagens)
+    """
+    state = _sessions.get(session_id)
+    if not state:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+    if not req.history:
+        raise HTTPException(status_code=400, detail="Nenhuma mensagem para supervisionar")
+
+    supervisor = SupervisorAgent()
+
+    async def generate():
+        full = ""
+        async for token in supervisor.supervise_stream(state.ficha, req.history, req.approach):
+            full += token
+            yield {"data": json.dumps({"type": "token", "content": token})}
+        yield {"data": json.dumps({"type": "done"})}
+
+    return EventSourceResponse(generate())
     """Streaming supervision that saves to DB on completion."""
     state = _sessions.get(session_id)
     if not state:
