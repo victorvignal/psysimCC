@@ -252,7 +252,7 @@ def start_timer(session_id: str) -> dict:
 
 
 @app.post("/api/sessions/{session_id}/rubric")
-def get_rubric(session_id: str, req: SuperviseRequest) -> dict:
+def get_rubric(session_id: str) -> dict:
     state = _sessions.get(session_id)
     if not state:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
@@ -260,9 +260,10 @@ def get_rubric(session_id: str, req: SuperviseRequest) -> dict:
         raise HTTPException(status_code=400, detail="Nenhuma conversa para avaliar")
 
     supervisor = SupervisorAgent()
-    dimensoes = supervisor.get_rubrica(state.ficha, state.agent.history, req.approach)
+    approach = state.approach or "TCC"
+    dimensoes = supervisor.get_rubrica(state.ficha, state.agent.history, approach)
     return {
-        "approach": req.approach,
+        "approach": approach,
         "dimensoes": [
             {"nome": d.nome, "score": d.score, "justificativa": d.justificativa}
             for d in dimensoes
