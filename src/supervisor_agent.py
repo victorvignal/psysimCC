@@ -39,14 +39,24 @@ class DimensaoRubrica:
 
 def _build_rubrica_prompt(ficha: Ficha, approach_key: str) -> str:
     a = ficha.apresentacao
+    c = ficha.comportamento
     approach_desc = APPROACHES.get(approach_key, approach_key)
     dims = "\n".join(f"- {d}" for d in RUBRICA_DIMENSOES)
+
+    # Enrich with conhecimento que o paciente tem/não tem
+    enrich = ""
+    if ficha.consciencia and ficha.consciencia.nao_tem_consciencia_de:
+        enrich += f"\nPadrões que o paciente não tem consciência (observe se o trainee identificou):\n- " + "\n- ".join(ficha.consciencia.nao_tem_consciencia_de)
+
     return f"""Você é um supervisor clínico avaliando uma sessão de treino.
 
 Contexto do caso:
 - Paciente: {a.nome_ficticio}, {a.idade} anos, {a.genero}, {a.ocupacao}
 - Queixa: {ficha.queixa_principal}
+- Gatilho atual: {ficha.gatilho_atual}
+- Estilo na sessão: {c.estilo_comunicacao}
 - Abordagem avaliada: {approach_key} — {approach_desc}
+{enrich}
 
 Avalie a sessão nas dimensões abaixo com nota de 1 a 5 e justificativa de 1–2 frases baseada EXCLUSIVAMENTE no que apareceu na transcrição.
 
@@ -74,7 +84,28 @@ def _format_transcript(nome: str, history: list[dict[str, str]]) -> str:
 
 def _build_system_prompt(ficha: Ficha, approach_key: str) -> str:
     a = ficha.apresentacao
+    c = ficha.comportamento
     approach_desc = APPROACHES.get(approach_key, approach_key)
+    ui = ficha.uso_interno
+
+    # Temas que o paciente tem consciência e não tem
+    consciente_block = ""
+    if ficha.consciencia:
+        if ficha.consciencia.nao_tem_consciencia_de:
+            consciente_block += (
+                f"\n## Padrão central do paciente (para sua análise de supervisor)\n"
+                f"O paciente não tem consciência de:\n- " + "\n- ".join(ficha.consciencia.nao_tem_consciencia_de)
+                + "\nEstejam atentos a se o trainee conseguiu tocar esses temas."
+            )
+
+    # Gatilhos
+    gatilhos_block = ""
+    if ficha.gatilhos:
+        gatilhos_block = f"""
+## Gatilhos do paciente
+Temas que fazem {a.nome_ficticio} se fechar: {', '.join(ficha.gatilhos.fecham)}
+Perguntas que parecem invasivas no início: {', '.join(ficha.gatilhos.invasivos_inicio)}
+"""
 
     return f"""Você é um supervisor clínico experiente conduzindo uma revisão pós-sessão com um estudante de psicologia em formação.
 
@@ -85,10 +116,19 @@ Você sabe apenas o que qualquer supervisor saberia antes de ver a sessão: os d
 **Apresentação:**
 - Paciente: {a.nome_ficticio}, {a.idade} anos, {a.genero}, {a.ocupacao}
 - Queixa principal: {ficha.queixa_principal}
+- Motivo declarado: {ficha.motivo_declarado or ficha.queixa_principal}
+
+**Contexto clínico:**
+- Gatilho atual: {ficha.gatilho_atual}
+- Estilo na sessão: {c.estilo_comunicacao}
+- Defesas predominantes: {', '.join(c.defesas_tipicas)}
+- Resistências: {', '.join(c.resistencias)}
+{gatilhos_block}
 
 ## Abordagem sendo avaliada
 
 **{approach_key}:** {approach_desc}
+{consciente_block}
 
 ---
 

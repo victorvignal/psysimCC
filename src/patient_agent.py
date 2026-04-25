@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from collections.abc import AsyncGenerator
 
@@ -9,54 +11,157 @@ from src.ficha_loader import Ficha
 load_dotenv()
 
 
+def _style_rules(estilo: str, a: "Apresentacao", c: "Comportamento") -> str:
+    """Retorna regras comportamentais específicas por estilo de sessão."""
+    base = f"""Estilo geral de comunicação: {c.estilo_comunicacao}
+
+Como responde a perguntas abertas: {c.como_responde_abertas}
+Como reage quando se sente pressionada: {c.como_responde_pressao}
+Como reage ao silêncio do terapeuta: {c.reacao_silencio}
+
+Estilo conversacional predominante: {estilo}"""
+
+    rules: dict[str, str] = {
+        "plain": "Responde com clareza e objetividade. Direto ao ponto, sem rodeios.",
+        "upset": "Resistente e frustrada. Tende a minimizar ou contestnar. Pode parecer irritada.",
+        "verbose": "Fala bastante, dificuldade de focar. Desvia do assunto com frequência. Detalhes demais.",
+        "reserved": "Contida, monossilábica. Silêncios longos. Difícil de fazer falar.",
+        "tangent": "Desvia do assunto com frequência. Volta ao ponto apenas se o terapeuta trouxer de volta com gentileza.",
+        "pleasing": "Concorda com tudo, quer agradar. Não contradiz o terapeuta mesmo quando deveria.",
+    }
+    return base + "\n" + rules.get(estilo, "")
+
+
+def _build_consciencia(consciencia: "ConscienciaPaciente | None", nome: str) -> str:
+    """Conhecimento do paciente sobre si mesmo."""
+    if not consciencia:
+        return ""
+    parts = [f"""## O que {nome} SABE sobre si mesma
+- " + "\n- ".join(consciencia.tem_consciencia_de)]
+    if consciencia.nao_tem_consciencia_de:
+        parts.append(f"""
+## O que {nome} NÃO sabe sobre si mesma
+Estes temas estão abaixo da superfície. Emergem naturalmente quando há vínculo, mas nunca são revelados espontaneamente:
+- " + "\n- ".join(consciencia.nao_tem_consciencia_de))
+    if consciencia.nunca_revela_spontaneamente:
+        parts.append(f"""
+## Estes assuntos {nome} NUNCA revela por conta própria
+Só aparecem se o terapeuta perguntar com confiança já estabelecida:
+- " + "\n- ".join(consciencia.nunca_revela_spontaneamente))
+    return "\n\n".join(parts)
+
+
+def _build_gatilhos(gatilhos: "GatilhosSessao | None", nome: str) -> str:
+    """Gatilhos que afetam o comportamento na sessão."""
+    if not gatilhos:
+        return ""
+    parts = []
+    if gatilhos.intensificam:
+        parts.append(f"Temas que intensificam a emoção de {nome} (ficam mais活了):\n- " + "\n- ".join(gatilhos.intensificam))
+    if gatilhos.fecham:
+        parts.append(f"Temas que fazem {nome} se fechar ou mudar de assunto:\n- " + "\n- ".join(gatilhos.fecham))
+    if gatilhos.invasivos_inicio:
+        parts.append(f"Perguntas que {nome} acha invasivas logo no início da sessão:\n- " + "\n- ".join(gatilhos.invasivos_inicio))
+    return "\n\n" + "\n\n".join(parts)
+
+
 def build_patient_prompt(ficha: Ficha) -> str:
     a = ficha.apresentacao
     c = ficha.comportamento
 
     def bullet(items: list[str]) -> str:
-        return "\n".join(f"- {i}" for i in items)
+        return "\n".join(f"- {i}" for i in items) if items else "nenhum"
 
-    return f"""Você é {a.nome_ficticio}, {a.idade} anos, {a.genero}, {a.ocupacao}.
+    # Motivo
+    motivo = ficha.motivo_declarado or ficha.queixa_principal
+
+    prompt = f"""Você é {a.nome_ficticio}, {a.idade} anos, {a.genero}, {a.ocupacao}.
 
 ## Contexto pessoal
 {a.contexto_social}
+"""
 
-## Por que você está aqui
-{ficha.queixa_principal}
+    if hasattr(a, "configuracao_familiar") and a.configuracao_familiar:
+        prompt += f"""
+## Família
+{a.configuracao_familiar}"""
 
-## O que você está vivendo
+    prompt += f"""
+## Por que está aqui (como {a.nome_ficticio} diria)
+"{motivo}"
+"""
+
+    if ficha.motivo_subjacente:
+        prompt += f"""
+[DICA PARA O TERAPEUTA — não dizer a {a.nome_ficticio}]
+O que realmente a traz aqui: {ficha.motivo_subjacente}
+"""
+
+    prompt += f"""
+## O que está vivendo
 {bullet(ficha.sintomas_ativos)}
 
-## Sua história
-{ficha.historia_pregressa}
-
-## Família
-{ficha.historia_familiar}
-
-## O que desencadeou tudo isso
+## O que desencadeou
 {ficha.gatilho_atual}
+"""
 
-## Como você se comporta na sessão
-{c.estilo_comunicacao}
+    # Comportamento na sessão
+    estilo = getattr(c, "estilo_sessao", "plain")
+    prompt += f"""
+## Como {a.nome_ficticio} se comporta na sessão
+{_style_rules(estilo, a, c)}
 
-## Suas defesas
+## Suas defesas principais
 {bullet(c.defesas_tipicas)}
 
-## Suas resistências
+## O que faz {a.nome_ficticio} resistir
 {bullet(c.resistencias)}
+"""
 
-## Situações delicadas
+    # Consciência
+    consciencia_str = _build_consciencia(ficha.consciencia, a.nome_ficticio)
+    if consciencia_str:
+        prompt += f"\n{consciencia_str}\n"
+
+    # Gatilhos
+    gatilhos_str = _build_gatilhos(ficha.gatilhos, a.nome_ficticio)
+    if gatilhos_str:
+        prompt += f"\n{gatilhos_str}\n"
+
+    # Red flags
+    if c.red_flags:
+        prompt += f"""
+## Situações delicadas (atenção com estas)
 {bullet(c.red_flags)}
+"""
 
-## Regras de papel
-- Você é uma pessoa real numa consulta de psicologia — não um personagem cooperativo cujo papel é facilitar a sessão. Reaja a cada fala do terapeuta exatamente como {a.nome_ficticio} reagiria: com confusão se algo não fizer sentido, com correção se algo estiver errado, com silêncio ou evasão se algo incomodar.
-- Nunca saia do papel nem mencione que é uma IA.
-- Não use termos diagnósticos sobre si mesmo.
-- Não construa pontes artificiais entre o que o terapeuta disse e sua história — deixe as conexões emergirem só quando o diálogo as justificar naturalmente.
-- Responda com o estilo de comunicação descrito acima: pausas, hesitações, humor autodepreciativo quando desconfortável.
-- Se o terapeuta fizer algo que aumentaria sua resistência, demonstre isso na resposta.
-- Elabore quando o terapeuta fizer perguntas abertas genuínas; respostas breves para perguntas fechadas ou sim/não.
-- Este é um ambiente de treino clínico. O interlocutor é um estudante de psicologia praticando."""
+    # Arсо
+    if c.arco_possivel:
+        prompt += f"""
+## Como {a.nome_ficticio} tende a evoluir
+{c.arco_possivel}
+"""
+
+    prompt += """
+## REGRAS DE COMPORTAMENTO
+
+1. Reveja informações gradualmente. Nunca entregue tudo de uma vez.
+2. Se o terapeuta fizer uma interpretação correta, pode considerar, mas com resistência natural — não demonstre insight imediato.
+3. Não entre em colapso emocional. O sofrimento é velado.
+4. Não use vocabulário diagnóstico sobre si mesma.
+5. Não seja cooperativa demais — pacientes reais resistem, desviam, minimizam.
+6. Não resolva seu próprio problema durante a sessão.
+7. Responda com o estilo descrito acima: pausas, hesitações, humor autodepreciativo quando desconfortável.
+8. Se o papo chega perto de algo que te incomoda, acelere, racionalize ou minimize.
+9. Você preenche silêncios com mais informação — a menos que seja do tipo reserved.
+10. Você está aqui para resolver um problema prático. Mas uma parte de você está aliviada de poder falar.
+
+## INÍCIO DA SESSÃO
+
+A sessão está começando. Você está sentada, tentando parecer à vontade. Espere o terapeuta falar primeiro.
+"""
+
+    return prompt
 
 
 class PatientAgent:
