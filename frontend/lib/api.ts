@@ -63,6 +63,11 @@ export async function endSession(sessionId: string): Promise<void> {
   await fetch(`${BASE}/api/sessions/${sessionId}`, { method: "DELETE" });
 }
 
+export async function deleteSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}/delete`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Erro ao deletar sessão");
+}
+
 export async function toggleTimer(
   sessionId: string
 ): Promise<{ is_paused: boolean; elapsed_str: string }> {

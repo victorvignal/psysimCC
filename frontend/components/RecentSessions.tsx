@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { deleteSession } from "@/lib/api";
 
 interface RecentSession {
   id: string;
@@ -21,6 +23,54 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+interface DeleteButtonProps {
+  sessionId: string;
+}
+
+function DeleteButton({ sessionId }: DeleteButtonProps) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!confirming) { setConfirming(true); return; }
+    setDeleting(true);
+    try {
+      await deleteSession(sessionId);
+      window.location.reload();
+    } catch {
+      setDeleting(false);
+      setConfirming(false);
+    }
+  }
+
+  if (confirming) {
+    return (
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-xs font-mono" style={{ color: "var(--red-fg)" }}>deletar?</span>
+        <button onClick={handleDelete} disabled={deleting}
+          className="text-xs font-mono px-2 py-1 rounded disabled:opacity-40"
+          style={{ background: "var(--red-fg)", color: "white" }}>
+          {deleting ? "..." : "sim"}
+        </button>
+        <button onClick={() => setConfirming(false)}
+          className="text-xs font-mono px-2 py-1 rounded"
+          style={{ background: "var(--border)", color: "var(--text-muted)" }}>
+          não
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={() => setConfirming(true)}
+      className="text-xs font-mono px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity shrink-0"
+      style={{ background: "var(--bg)", color: "var(--text-faint)", border: "1px solid var(--border)" }}
+      title="Deletar sessão">
+      🗑
+    </button>
+  );
+}
+
 export default function RecentSessions({ sessions }: { sessions: RecentSession[] }) {
   const router = useRouter();
 
@@ -33,7 +83,7 @@ export default function RecentSessions({ sessions }: { sessions: RecentSession[]
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         {sessions.map((s, i) => (
           <div key={s.id}
-            className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-black/[0.03] transition-colors"
+            className="flex items-center gap-3 px-5 py-4 group cursor-pointer hover:bg-black/[0.03] transition-colors"
             style={{ borderBottom: i < sessions.length - 1 ? "1px solid var(--border-subtle)" : undefined }}
             onClick={() => router.push(`/session/${s.id}`)}>
             {/* Avatar circle */}
@@ -47,14 +97,14 @@ export default function RecentSessions({ sessions }: { sessions: RecentSession[]
                 {s.ficha_nome}
               </p>
               <p className="text-xs font-mono mt-0.5" style={{ color: "var(--text-faint)" }}>
-                {formatDate(s.created_at)}
+                {formatDate(s.created_at)} · {formatDuration(s.duration_seconds)}
               </p>
             </div>
-            {/* Duration badge */}
-            <span className="text-xs font-mono px-2 py-1 rounded shrink-0"
-              style={{ background: "var(--bg)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-              {formatDuration(s.duration_seconds)}
-            </span>
+            {/* Delete button */}
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={e => e.stopPropagation()}>
+              <DeleteButton sessionId={s.id} />
+            </div>
           </div>
         ))}
       </div>

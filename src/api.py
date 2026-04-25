@@ -304,6 +304,20 @@ def end_session(session_id: str) -> dict:
     return {"turns": turns}
 
 
+@app.delete("/api/sessions/{session_id}/delete")
+def delete_session(session_id: str) -> dict:
+    """Remove sessão do DB e limpa memória local."""
+    from src.database import _get_client
+    client = _get_client()
+    if client:
+        try:
+            client.table("sessions").delete().eq("id", session_id).execute()
+        except Exception:
+            pass
+    _sessions.pop(session_id, None)
+    return {"ok": True}
+
+
 @app.get("/api/dashboard")
 def dashboard() -> dict:
     return get_dashboard()
