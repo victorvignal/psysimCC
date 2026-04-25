@@ -73,6 +73,21 @@ def get_dashboard() -> dict:
         "session_id, approach, rubric_scores, created_at"
     ).execute().data or []
 
+    # Carrega nomes das fichas localmente
+    from src.ficha_loader import load_ficha
+    from pathlib import Path
+    fichas_dir = Path(__file__).parent.parent / "fichas" / "validated"
+    ficha_nomes: dict[str, str] = {}
+    try:
+        for path in fichas_dir.glob("*.yaml"):
+            try:
+                f = load_ficha(path)
+                ficha_nomes[f.id] = f.apresentacao.nome_ficticio
+            except Exception:
+                continue
+    except Exception:
+        pass
+
     total_sessions = len(sessions)
     total_minutes = sum(s.get("duration_seconds", 0) for s in sessions) // 60
     total_feedbacks = len(supervisions)
@@ -84,7 +99,6 @@ def get_dashboard() -> dict:
         scores = sup.get("rubric_scores") or []
         if not scores:
             continue
-        # Encontra ficha_id pela session
         session = next((s for s in sessions if s["id"] == sup.get("session_id")), None)
         ficha_id = session["ficha_id"] if session else "desconhecido"
         if ficha_id not in progress:
@@ -94,6 +108,16 @@ def get_dashboard() -> dict:
             if nome:
                 progress[ficha_id].setdefault(nome, []).append(d.get("score", 0))
 
+    recent = []
+    for s in sessions[:5]:
+        recent.append({
+            "id": s["id"],
+            "ficha_id": s["ficha_id"],
+            "ficha_nome": ficha_nomes.get(s["ficha_id"], s["ficha_id"]),
+            "created_at": s["created_at"],
+            "duration_seconds": s.get("duration_seconds", 0),
+        })
+
     return {
         "stats": {
             "sessions": total_sessions,
@@ -101,7 +125,7 @@ def get_dashboard() -> dict:
             "feedbacks": total_feedbacks,
             "patients": patients,
         },
-        "recent_sessions": sessions[:5],
+        "recent_sessions": recent,
         "progress": progress,
     }
 

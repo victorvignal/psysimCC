@@ -1,6 +1,7 @@
 import { getDashboard, listFichas, type FichaInfo, type Dashboard } from "@/lib/api";
 import PatientGrid from "@/components/PatientGrid";
 import DashboardStats from "@/components/DashboardStats";
+import RecentSessions from "@/components/RecentSessions";
 
 export default async function Home() {
   let fichas: FichaInfo[] = [];
@@ -19,18 +20,30 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <nav style={{ background: "var(--nav-bg)", color: "var(--nav-text)" }}
-        className="px-6 h-11 flex items-center">
+      <nav className="h-11 px-6 flex items-center gap-4 shrink-0"
+        style={{ background: "var(--nav-bg)", color: "var(--nav-text)" }}>
         <span className="font-bold text-base tracking-tight">psysim</span>
+        <span className="w-px h-4 opacity-20" style={{ background: "var(--nav-text)" }} />
+        <span className="text-sm" style={{ color: "rgba(250,250,247,0.6)" }}>
+          Simulador clínico de psicologia
+        </span>
+        <span className="ml-auto text-xs font-mono" style={{ color: "rgba(250,250,247,0.3)" }}>
+          {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+        </span>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col gap-10">
 
-        {/* Stats */}
+        {/* Stats + Progress */}
         {dashboard && <DashboardStats dashboard={dashboard} />}
 
+        {/* Sessões recentes */}
+        {dashboard && dashboard.recent_sessions.length > 0 && (
+          <RecentSessions sessions={dashboard.recent_sessions} />
+        )}
+
         {/* Pacientes */}
-        <div className="mt-10">
+        <div>
           <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text)" }}>
             Pacientes disponíveis
           </h2>
