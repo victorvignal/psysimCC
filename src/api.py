@@ -155,7 +155,11 @@ async def send_message(session_id: str, req: MessageRequest) -> dict:
             raise HTTPException(status_code=404, detail="Sessão não encontrada")
         _sessions[session_id] = state
 
-    reply = await state.agent.respond_async(req.content)
+    try:
+        reply = await state.agent.respond_async(req.content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro do modelo: {type(e).__name__}: {e}")
+
     _persist_session(session_id, state)
     return {"content": reply}
 
