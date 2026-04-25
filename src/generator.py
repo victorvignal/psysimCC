@@ -31,20 +31,38 @@ def _build_system_prompt() -> str:
 
 Your job: receive a free-text description of a patient and output a complete, fictional, clinically plausible patient case in YAML format.
 
-## Schema — follow this exactly (this is a real example from the system)
+## Schema — follow this exactly
 
 {reference}
 
 ## Output rules
 - Output ONLY valid YAML. No markdown fences, no explanation, no commentary.
 - Every field present in the example is required unless it has `| None` in the schema.
-- `_uso_interno` must always be complete: diagnosis, both formulations (psicodinamica + tcc), and temas_evitados.
+- `comportamento` must include:
+  - `estilo_sessao`: one of plain | upset | verbose | reserved | tangent | pleasing
+  - `como_responde_abertas`: how the patient responds to open questions
+  - `como_responde_pressao`: how the patient reacts when pressed emotionally
+  - `reacao_silencio`: how the patient reacts to the therapist's silence
+  - `estilo_comunicacao`: free-text description of communication style
+  - `defesas_tipicas`: list of defense mechanisms (2-4 items)
+  - `resistencias`: list of resistance patterns (2-4 items)
+  - `red_flags`: list of delicate situations (2-3 items)
+- `consciencia` (optional, include if relevant):
+  - `tem_consciencia_de`: what the patient is aware of about themselves
+  - `nao_tem_consciencia_de`: what is below the surface (emerges with trust)
+  - `nunca_revela_spontaneamente`: never revealed unless asked directly with trust
+- `gatilhos` (optional, include if relevant):
+  - `intensificam`: themes that visibly increase emotion
+  - `fecham`: themes that make the patient shut down
+  - `invasivos_inicio`: questions that feel invasive early in therapy
+- `uso_interno` (underscore prefix `_uso_interno` in YAML) must always be complete:
+  diagnosis, psicodinamica formulation, tcc formulation, crencas_centrais, padrao_relacional, recursos_genuinos, temas_evitados
 - `metadata.origem` → `gerado_por_ia`
 - `metadata.criada_em` → `{date.today().isoformat()}`
 - `metadata.revisada_por` → `[pendente]`
 - `metadata.versao_schema` → `0.1`
 - `id` → follow the pattern `firstname_01` in lowercase, no accents (e.g. `joao_01`, `ana_02`)
-- Do NOT copy Maria's case. Create a genuinely different patient, different quadro, different history.
+- Do NOT copy Maria's case. Create a genuinely different patient, different cuadro, different history.
 - All narrative fields in Brazilian Portuguese.
 - `nivel_dificuldade` → iniciante | intermediario | avancado
 - Fields marked "USO INTERNO" go only in `_uso_interno`, never in the patient-facing sections.
@@ -71,9 +89,11 @@ def _unique_id(proposed: str) -> str:
 def _parse_and_validate(raw: str) -> tuple[Ficha, str]:
     yaml_text = _strip_fences(raw)
     data = yaml.safe_load(yaml_text)
-    uso_interno = data.pop("_uso_interno", None)
-    if uso_interno:
-        data["uso_interno"] = uso_interno
+    # Handle underscore-prefixed keys (legacy / YAML convention)
+    for key in ["_uso_interno", "_consciencia", "_gatilhos"]:
+        val = data.pop(key, None)
+        if val is not None:
+            data[key[1:]] = val  # strip leading underscore
     ficha = Ficha.model_validate(data)
     return ficha, yaml_text
 
