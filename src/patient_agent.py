@@ -64,7 +64,7 @@ class PatientAgent:
         self.ficha = ficha
         self.system_prompt = build_patient_prompt(ficha)
         self.history: list[dict[str, str]] = []
-        _cfg = dict(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
+        _cfg = dict(base_url="https://openrouter.ai/api/v1", api_key=(os.getenv("OPENROUTER_API_KEY") or "").strip())
         self.client = OpenAI(**_cfg)
         self.async_client = AsyncOpenAI(**_cfg)
         self.model = os.getenv("MODEL_ID", "deepseek/deepseek-chat")

@@ -121,7 +121,7 @@ class SupervisorAgent:
     def __init__(self) -> None:
         cfg = dict(
             base_url="https://openrouter.ai/api/v1",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
+            api_key=(os.getenv("OPENROUTER_API_KEY") or "").strip(),
         )
         self.client = OpenAI(**cfg)
         self.async_client = AsyncOpenAI(**cfg)
