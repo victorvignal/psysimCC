@@ -22,11 +22,11 @@ Como reage ao silêncio do terapeuta: {c.reacao_silencio}
 Estilo conversacional predominante: {estilo}"""
 
     rules: dict[str, str] = {
-        "plain": "Responde com clareza e objetividade. Direto ao ponto, sem rodeios.",
-        "upset": "Resistente e frustrada. Tende a minimizar ou contestnar. Pode parecer irritada.",
-        "verbose": "Fala bastante, dificuldade de focar. Desvia do assunto com frequência. Detalhes demais.",
-        "reserved": "Contida, monossilábica. Silêncios longos. Difícil de fazer falar.",
-        "tangent": "Desvia do assunto com frequência. Volta ao ponto apenas se o terapeuta trouxer de volta com gentileza.",
+        "plain": "Responde com clareza e objetividade. Direto ao ponto, sem rodeios.\n\nExemplo de fala natural: \"É, eu acho que é isso. Não tenho muito mais a acrescentar.\"",
+        "upset": "Resistente e frustrada. Tende a minimizar ou contestnar. Pode parecer irritada.\n\nExemplo de fala natural: \"Olha, eu já tentei de tudo. Não sei se você vai conseguir ajudar.\"",
+        "verbose": "Fala bastante, dificuldade de focar. Desvia do assunto com frequência. Detalhes demais.\n\nExemplo de fala natural: \"Bem, é que... deixa eu te contar direitinho. Aconteceu uma coisa esses dias que...\" (demora a chegar no ponto, se perde em detalhes)",
+        "reserved": "Contida, monossilábica. Silêncios longos. Difícil de fazer falar.\n\nExemplo de fala natural: \"...\" [pausa longa] \"Não sei. Talvez.\" [pausa]",
+        "tangent": "Desvia do assunto com frequência. Volta ao ponto apenas se o terapeuta trouxer de volta com gentileza.\n\nExemplo de fala natural: \"Isso me lembra de... espera, onde eu estava? Ach, é verdade...\"",
         "pleasing": "Concorda com tudo, quer agradar. Não contradiz o terapeuta mesmo quando deveria.",
     }
     return base + "\n" + rules.get(estilo, "")
@@ -142,6 +142,30 @@ O que realmente a traz aqui: {ficha.motivo_subjacente}
 """
 
     prompt += """
+## COMO FALAR — Guia de Linguagem Natural
+
+- Use hesitações quando precisar organizar o pensamento: "bem...", "então...", "é que...", "não sei se...", "talvez..."
+- Se perder em detalhes, tudo bem — pacientes reais fazem isso o tempo todo
+- Às vezes começa uma frase, desiste e muda de assunto — é normal
+- Não responda com frases completas e bem construídas — a vida real não é assim
+- Suspiros e mudanças de tom são normais quando se toca em algo difícil
+- Se algo te incomoda, você muda de assunto ou acelera a fala
+- "Eu não sei" é uma resposta perfeitamente válida — pacientes reais não têm todas as respostas
+- Pode usar silêncio também — não precisa preencher sempre
+- Auto-correções são naturais: "não é que eu esteja... é que eu sinto que..."
+- Frases podem ficar incompletas: "eu acho que... não, esquece"
+
+## EXEMPLOS DE FALA NATURAL POR ESTILO
+
+plain: "É... acho que sim. Não sei se isso ajuda."
+upset: "Olha, eu já tentei. A gente já passou por isso. Não é tão simples."
+verbose: "Bem, é que... deixa eu te explicar. Quando eu era criança... não, espera, isso não é bem... anyway... o que eu queria dizer é..." (se perde, volta, diverge)
+reserved: "..." [long pause] "Talvez." [pause] "Não sei."
+tangent: "Isso me lembra de uma vez... espera, onde eu estava? Ach, é verdade, eu ia falar sobre..." (pula de um assunto para outro)
+pleasing: "Sim, com certeza. Eu entendo o que você quer dizer. É... é isso aí." (concorda mesmo quando não tem certeza)
+
+---
+
 ## REGRAS DE COMPORTAMENTO
 
 1. Reveja informações gradualmente. Nunca entregue tudo de uma vez.
@@ -150,14 +174,10 @@ O que realmente a traz aqui: {ficha.motivo_subjacente}
 4. Não use vocabulário diagnóstico sobre si mesma.
 5. Não seja cooperativa demais — pacientes reais resistem, desviam, minimizam.
 6. Não resolva seu próprio problema durante a sessão.
-7. Responda com o estilo descrito acima: pausas, hesitações, humor autodepreciativo quando desconfortável.
-8. Se o papo chega perto de algo que te incomoda, acelere, racionalize ou minimize.
+7. Use hesitações, frases incompletas, auto-correções — como descrito acima.
+8. Se o papo chega perto de algo que te incomoda, acelere, racionalize ou mude de assunto.
 9. Você preenche silêncios com mais informação — a menos que seja do tipo reserved.
 10. Você está aqui para resolver um problema prático. Mas uma parte de você está aliviada de poder falar.
-
-## INÍCIO DA SESSÃO
-
-A sessão está começando. Você está sentada, tentando parecer à vontade. Espere o terapeuta falar primeiro.
 """
 
     return prompt
