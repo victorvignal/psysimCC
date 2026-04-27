@@ -4,15 +4,16 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from src.database import get_dashboard, save_session, save_supervision
+from src.auth import get_current_user
+from src.database import get_dashboard, get_trajectory, save_session, save_supervision
 from src.ficha_loader import Ficha, load_ficha
 from src.patient_agent import PatientAgent
-from src.supervisor_agent import APPROACHES, SupervisorAgent, RUBRICA_DIMENSOES
+from src.supervisor_agent import APPROACHES, SupervisorAgent
 from src.timer import SessionTimer
 
 app = FastAPI(title="Simulador Clínico API")
@@ -39,6 +40,7 @@ class SessionState:
     timer: SessionTimer | None = None
     approach: str = "TCC"
     last_supervision: str = ""
+    user_id: str = ""
 
 
 _sessions: dict[str, SessionState] = {}
@@ -57,6 +59,7 @@ def _persist_session(session_id: str, state: SessionState) -> None:
             "timer_minutes": state.timer.duration_minutes if state.timer else 0,
             "elapsed_seconds": int(state.timer.elapsed_seconds) if state.timer else 0,
             "approach": state.approach,
+            "user_id": state.user_id or None,
             "updated_at": "now()",
         }).execute()
     except Exception:
@@ -125,7 +128,10 @@ def list_fichas() -> list[dict]:
 
 
 @app.post("/api/sessions")
-def start_session(req: StartSessionRequest) -> dict:
+def start_session(
+    req: StartSessionRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     path = _FICHAS_DIR / f"{req.ficha_id}.yaml"
     if not path.exists():
         raise HTTPException(status_code=404, detail="Ficha não encontrada")
@@ -134,7 +140,7 @@ def start_session(req: StartSessionRequest) -> dict:
     timer = SessionTimer(req.timer_minutes) if req.timer_minutes > 0 else None
     session_id = str(uuid.uuid4())
 
-    state = SessionState(ficha=ficha, agent=PatientAgent(ficha), timer=timer)
+    state = SessionState(ficha=ficha, agent=PatientAgent(ficha), timer=timer, user_id=user_id)
     _sessions[session_id] = state
     _persist_session(session_id, state)
     return {
@@ -149,7 +155,11 @@ def start_session(req: StartSessionRequest) -> dict:
 
 
 @app.post("/api/sessions/{session_id}/message")
-async def send_message(session_id: str, req: MessageRequest) -> dict:
+async def send_message(
+    session_id: str,
+    req: MessageRequest,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     import traceback
     try:
         state = _sessions.get(session_id)
@@ -169,7 +179,7 @@ async def send_message(session_id: str, req: MessageRequest) -> dict:
 
 
 @app.get("/api/sessions/{session_id}")
-def get_session(session_id: str) -> dict:
+def get_session(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
     state = _sessions.get(session_id)
     if not state:
         state = _load_session(session_id)
@@ -199,7 +209,7 @@ def get_session(session_id: str) -> dict:
 
 
 @app.post("/api/sessions/{session_id}/timer/toggle")
-def toggle_timer(session_id: str) -> dict:
+def toggle_timer(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
     state = _sessions.get(session_id)
     if not state:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
@@ -210,7 +220,7 @@ def toggle_timer(session_id: str) -> dict:
 
 
 @app.post("/api/sessions/{session_id}/timer/start")
-def start_timer(session_id: str) -> dict:
+def start_timer(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
     """Inicia o timer com duration padrão (30 min) se ainda não existir."""
     state = _sessions.get(session_id)
     if not state:
@@ -230,7 +240,7 @@ def start_timer(session_id: str) -> dict:
 
 
 @app.post("/api/sessions/{session_id}/supervise")
-async def supervise(session_id: str):
+async def supervise(session_id: str, user_id: str = Depends(get_current_user)):
     """Supervisão via histórico da sessão (chamado pelo frontend após fim da sessão)."""
     state = _sessions.get(session_id)
     if not state:
@@ -257,7 +267,11 @@ async def supervise(session_id: str):
 
 
 @app.post("/api/sessions/{session_id}/supervise-preview")
-async def supervise_preview(session_id: str, req: SupervisePreviewRequest):
+async def supervise_preview(
+    session_id: str,
+    req: SupervisePreviewRequest,
+    user_id: str = Depends(get_current_user),
+):
     """Supervisão em tempo real com histórico enviado diretamente pelo frontend."""
     state = _sessions.get(session_id)
     if not state:
@@ -283,7 +297,7 @@ async def supervise_preview(session_id: str, req: SupervisePreviewRequest):
 
 
 @app.post("/api/sessions/{session_id}/rubric")
-def get_rubric(session_id: str) -> dict:
+def get_rubric(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
     state = _sessions.get(session_id)
     if not state:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
@@ -296,25 +310,30 @@ def get_rubric(session_id: str) -> dict:
     return {
         "approach": approach,
         "dimensoes": [
-            {"nome": d.nome, "score": d.score, "justificativa": d.justificativa}
+            {
+                "nome": d.nome,
+                "score": d.score,
+                "justificativa": d.justificativa,
+                "anchor": getattr(d, "anchor", ""),
+            }
             for d in dimensoes
         ],
     }
 
 
 @app.delete("/api/sessions/{session_id}")
-def end_session(session_id: str) -> dict:
+def end_session(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
     state = _sessions.pop(session_id, None)
     if not state:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
     turns = len(state.agent.history) // 2
     duration = int(state.timer.elapsed_seconds) if state.timer else 0
-    save_session(state.ficha.id, state.agent.history, duration_seconds=duration)
+    save_session(state.ficha.id, state.agent.history, duration_seconds=duration, user_id=user_id)
     return {"turns": turns}
 
 
 @app.delete("/api/sessions/{session_id}/delete")
-def delete_session(session_id: str) -> dict:
+def delete_session(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
     """Remove sessão do DB e limpa memória local."""
     from src.database import _get_client
     client = _get_client()
@@ -328,5 +347,10 @@ def delete_session(session_id: str) -> dict:
 
 
 @app.get("/api/dashboard")
-def dashboard() -> dict:
-    return get_dashboard()
+def dashboard(user_id: str = Depends(get_current_user)) -> dict:
+    return get_dashboard(user_id=user_id)
+
+
+@app.get("/api/users/me/trajectory")
+def trajectory(user_id: str = Depends(get_current_user)) -> dict:
+    return {"sessions": get_trajectory(user_id)}

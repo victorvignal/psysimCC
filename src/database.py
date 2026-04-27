@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
@@ -25,6 +26,7 @@ def save_session(
     ficha_id: str,
     turns: list[dict[str, str]],
     duration_seconds: int = 0,
+    user_id: str | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> str | None:
     client = _get_client()
@@ -36,6 +38,7 @@ def save_session(
             "ficha_id": ficha_id,
             "turns": turns,
             "duration_seconds": duration_seconds,
+            "user_id": user_id,
             "metadata": metadata or {},
         })
         .execute()
@@ -47,6 +50,7 @@ def save_supervision(
     session_id: str | None,
     approach: str,
     feedback: str,
+    user_id: str | None = None,
     rubric_scores: list[dict] | None = None,
 ) -> None:
     client = _get_client()
@@ -56,29 +60,34 @@ def save_supervision(
         "session_id": session_id,
         "approach": approach,
         "feedback": feedback,
+        "user_id": user_id,
         "rubric_scores": rubric_scores or [],
     }).execute()
 
 
-def get_dashboard() -> dict:
+def get_dashboard(user_id: str | None = None) -> dict:
     client = _get_client()
     if not client:
         return _empty_dashboard()
 
-    sessions = client.table("sessions").select(
+    q_sessions = client.table("sessions").select(
         "id, ficha_id, created_at, duration_seconds"
-    ).order("created_at", desc=True).execute().data or []
+    ).order("created_at", desc=True)
+    if user_id:
+        q_sessions = q_sessions.eq("user_id", user_id)
+    sessions = q_sessions.execute().data or []
 
-    supervisions = client.table("supervisions").select(
+    q_supervisions = client.table("supervisions").select(
         "session_id, approach, rubric_scores, created_at"
-    ).execute().data or []
+    )
+    if user_id:
+        q_supervisions = q_supervisions.eq("user_id", user_id)
+    supervisions = q_supervisions.execute().data or []
 
-    # Carrega nomes das fichas localmente
-    from src.ficha_loader import load_ficha
-    from pathlib import Path
     fichas_dir = Path(__file__).parent.parent / "fichas" / "validated"
     ficha_nomes: dict[str, str] = {}
     try:
+        from src.ficha_loader import load_ficha
         for path in fichas_dir.glob("*.yaml"):
             try:
                 f = load_ficha(path)
@@ -93,7 +102,6 @@ def get_dashboard() -> dict:
     total_feedbacks = len(supervisions)
     patients = len({s["ficha_id"] for s in sessions if s.get("ficha_id")})
 
-    # Progresso por dimensão (média de scores por ficha)
     progress: dict[str, dict[str, list[int]]] = {}
     for sup in supervisions:
         scores = sup.get("rubric_scores") or []
@@ -128,6 +136,21 @@ def get_dashboard() -> dict:
         "recent_sessions": recent,
         "progress": progress,
     }
+
+
+def get_trajectory(user_id: str) -> list[dict]:
+    """Retorna supervisões com rubric_scores ordenadas por data para o user_id."""
+    client = _get_client()
+    if not client:
+        return []
+    result = (
+        client.table("supervisions")
+        .select("id, session_id, approach, rubric_scores, created_at")
+        .eq("user_id", user_id)
+        .order("created_at")
+        .execute()
+    )
+    return result.data or []
 
 
 def _empty_dashboard() -> dict:
