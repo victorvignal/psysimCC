@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { DimensaoRubrica } from "@/lib/api";
 
 function scoreColor(score: number): { bg: string; fg: string } {
@@ -8,8 +9,7 @@ function scoreColor(score: number): { bg: string; fg: string } {
   return              { bg: "var(--green-bg)",   fg: "var(--green-fg)" };
 }
 
-function ScoreDots({ score }: { score: number }) {
-  const { fg } = scoreColor(score);
+function ScoreDots({ score, fg }: { score: number; fg: string }) {
   return (
     <div className="flex gap-1">
       {Array.from({ length: 5 }, (_, i) => (
@@ -30,6 +30,7 @@ export default function RubricaView({
   dimensoes: DimensaoRubrica[];
   approach: string;
 }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
   const total = dimensoes.reduce((s, d) => s + d.score, 0);
   const media = dimensoes.length ? (total / dimensoes.length).toFixed(1) : "—";
 
@@ -58,25 +59,51 @@ export default function RubricaView({
       <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
         {dimensoes.map((d) => {
           const { bg, fg } = scoreColor(d.score);
+          const isOpen = expanded === d.nome;
           return (
             <div key={d.nome} className="px-5 py-4">
+              {/* Score row */}
               <div className="flex items-start justify-between gap-4 mb-2">
                 <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
                   {d.nome}
                 </span>
                 <div className="flex items-center gap-2 shrink-0">
-                  <ScoreDots score={d.score} />
+                  <ScoreDots score={d.score} fg={fg} />
                   <span className="text-xs font-mono font-bold w-6 text-right"
                     style={{ color: fg }}>
                     {d.score}/5
                   </span>
                 </div>
               </div>
+
+              {/* Justificativa */}
               {d.justificativa && (
-                <p className="text-xs leading-relaxed pl-0"
+                <p className="text-xs leading-relaxed mb-1.5"
                   style={{ color: "var(--text-muted)" }}>
                   {d.justificativa}
                 </p>
+              )}
+
+              {/* Âncora comportamental — expandível */}
+              {d.anchor && (
+                <>
+                  {isOpen && (
+                    <div
+                      className="text-xs rounded-lg px-3 py-2 mt-1 mb-1.5"
+                      style={{ background: bg, color: fg, border: `1px solid ${fg}` }}
+                    >
+                      <span className="font-mono font-bold mr-1.5">{d.score}:</span>
+                      {d.anchor}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setExpanded(isOpen ? null : d.nome)}
+                    className="text-xs font-mono transition-colors"
+                    style={{ color: "var(--text-faint)" }}
+                  >
+                    {isOpen ? "▲ ocultar âncora" : "▼ ver âncora comportamental"}
+                  </button>
+                </>
               )}
             </div>
           );
