@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAI
 
 from src.ficha_loader import Ficha
+from src.rubrica_data import get_anchor_text, get_dimensoes
 
 load_dotenv()
 
@@ -20,58 +21,53 @@ APPROACHES: dict[str, str] = {
 }
 
 
-RUBRICA_DIMENSOES = [
-    "Empatia e validação",
-    "Formulação de caso",
-    "Técnica de entrevista",
-    "Manejo de resistência",
-    "Aliança terapêutica",
-    "Planejamento terapêutico",
-]
-
-
 @dataclass
 class DimensaoRubrica:
     nome: str
     score: int        # 1–5
     justificativa: str
+    anchor: str = ""  # descrição comportamental do score dado
 
 
 def _build_rubrica_prompt(ficha: Ficha, approach_key: str) -> str:
     a = ficha.apresentacao
-    c = ficha.comportamento
     approach_desc = APPROACHES.get(approach_key, approach_key)
-    dims = "\n".join(f"- {d}" for d in RUBRICA_DIMENSOES)
+    dimensoes = get_dimensoes(approach_key)
 
-    # Enrich with conhecimento que o paciente tem/não tem
+    dims_text = ""
+    for d in dimensoes:
+        dims_text += f"\n**{d['nome']}**\n"
+        for score in range(1, 6):
+            dims_text += f"  {score}: {d['anchors'][score]}\n"
+
     enrich = ""
     if ficha.consciencia and ficha.consciencia.nao_tem_consciencia_de:
-        enrich += f"\nPadrões que o paciente não tem consciência (observe se o trainee identificou):\n- " + "\n- ".join(ficha.consciencia.nao_tem_consciencia_de)
+        enrich += (
+            "\nPadrões que o paciente não tem consciência (observe se o trainee identificou):\n- "
+            + "\n- ".join(ficha.consciencia.nao_tem_consciencia_de)
+        )
+
+    nomes_json = "\n".join(
+        f'    {{"nome": "{d["nome"]}", "score": N, "justificativa": "..."}},'
+        for d in dimensoes
+    )
 
     return f"""Você é um supervisor clínico avaliando uma sessão de treino.
 
 Contexto do caso:
 - Paciente: {a.nome_ficticio}, {a.idade} anos, {a.genero}, {a.ocupacao}
 - Queixa: {ficha.queixa_principal}
-- Gatilho atual: {ficha.gatilho_atual}
-- Estilo na sessão: {c.estilo_comunicacao}
 - Abordagem avaliada: {approach_key} — {approach_desc}
 {enrich}
 
-Avalie a sessão nas dimensões abaixo com nota de 1 a 5 e justificativa de 1–2 frases baseada EXCLUSIVAMENTE no que apareceu na transcrição.
-
-Escala: 1 = ausente/inadequado · 2 = insuficiente · 3 = adequado · 4 = bom · 5 = excelente
-
-Dimensões:
-{dims}
-
+Avalie a sessão nas dimensões abaixo. Para cada dimensão, escolha o score (1–5) cuja descrição melhor representa o que apareceu na transcrição. Baseie-se EXCLUSIVAMENTE no que está na transcrição.
+{dims_text}
 Retorne APENAS JSON válido, sem texto fora do JSON:
 {{
   "dimensoes": [
-    {{"nome": "...", "score": N, "justificativa": "..."}},
-    ...
+{nomes_json}
   ]
-}}"""
+}}\n"""
 
 
 def _format_transcript(nome: str, history: list[dict[str, str]]) -> str:
@@ -200,6 +196,7 @@ class SupervisorAgent:
                 nome=d["nome"],
                 score=max(1, min(5, int(d["score"]))),
                 justificativa=d.get("justificativa", ""),
+                anchor=get_anchor_text(approach, d["nome"], max(1, min(5, int(d["score"])))),
             )
             for d in data.get("dimensoes", [])
         ]
