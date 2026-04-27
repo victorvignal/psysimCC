@@ -2,6 +2,7 @@ import { getDashboard, listFichas, type FichaInfo, type Dashboard } from "@/lib/
 import PatientGrid from "@/components/PatientGrid";
 import DashboardStats from "@/components/DashboardStats";
 import RecentSessions from "@/components/RecentSessions";
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function Home() {
   let fichas: FichaInfo[] = [];
@@ -27,9 +28,12 @@ export default async function Home() {
         <span className="text-sm" style={{ color: "rgba(250,250,247,0.6)" }}>
           Simulador clínico de psicologia
         </span>
-        <span className="ml-auto text-xs font-mono" style={{ color: "rgba(250,250,247,0.3)" }}>
-          {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs font-mono" style={{ color: "rgba(250,250,247,0.3)" }}>
+            {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+          </span>
+          <LogoutButton />
+        </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col gap-10">

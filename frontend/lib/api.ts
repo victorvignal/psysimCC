@@ -1,5 +1,17 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+let _accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  _accessToken = token;
+}
+
+export function authHeaders(): Record<string, string> {
+  const h: Record<string, string> = { "Content-Type": "application/json" };
+  if (_accessToken) h["Authorization"] = `Bearer ${_accessToken}`;
+  return h;
+}
+
 export interface FichaInfo {
   id: string;
   nome: string;
@@ -46,7 +58,7 @@ export async function startSession(
 ): Promise<SessionInfo> {
   const res = await fetch(`${BASE}/api/sessions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify({ ficha_id: fichaId, timer_minutes: timerMinutes }),
   });
   if (!res.ok) throw new Error("Erro ao iniciar sessão");
@@ -54,17 +66,25 @@ export async function startSession(
 }
 
 export async function getSession(sessionId: string): Promise<SessionState> {
-  const res = await fetch(`${BASE}/api/sessions/${sessionId}`);
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Sessão não encontrada");
   return res.json();
 }
 
 export async function endSession(sessionId: string): Promise<void> {
-  await fetch(`${BASE}/api/sessions/${sessionId}`, { method: "DELETE" });
+  await fetch(`${BASE}/api/sessions/${sessionId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
 }
 
 export async function deleteSession(sessionId: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/sessions/${sessionId}/delete`, { method: "DELETE" });
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}/delete`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Erro ao deletar sessão");
 }
 
@@ -73,6 +93,7 @@ export async function toggleTimer(
 ): Promise<{ is_paused: boolean; elapsed_str: string }> {
   const res = await fetch(`${BASE}/api/sessions/${sessionId}/timer/toggle`, {
     method: "POST",
+    headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Erro ao alternar timer");
   return res.json();
@@ -82,6 +103,7 @@ export interface DimensaoRubrica {
   nome: string;
   score: number;
   justificativa: string;
+  anchor: string;
 }
 
 export interface Rubrica {
@@ -109,25 +131,35 @@ export interface Dashboard {
 }
 
 export async function getDashboard(): Promise<Dashboard> {
-  const res = await fetch(`${BASE}/api/dashboard`);
+  const res = await fetch(`${BASE}/api/dashboard`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Erro ao carregar dashboard");
   return res.json();
 }
 
 export async function getRubric(sessionId: string): Promise<Rubrica> {
-  const res = await fetch(`${BASE}/api/sessions/${sessionId}/rubric`, { method: "POST" });
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}/rubric`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Erro ao gerar rubrica");
   return res.json();
 }
 
-function makeStreamer(url: string, body: object, onToken: (t: string) => void, onDone: () => void): () => void {
+function makeStreamer(
+  url: string,
+  body: object,
+  onToken: (t: string) => void,
+  onDone: () => void
+): () => void {
   const controller = new AbortController();
 
   (async () => {
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify(body),
         signal: controller.signal,
       });
@@ -169,7 +201,7 @@ export async function sendMessage(
 ): Promise<string> {
   const res = await fetch(`${BASE}/api/sessions/${sessionId}/message`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify({ content }),
   });
   if (!res.ok) throw new Error("Erro ao enviar mensagem");
@@ -178,7 +210,10 @@ export async function sendMessage(
 }
 
 export async function startTimer(sessionId: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/sessions/${sessionId}/timer/start`, { method: "POST" });
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}/timer/start`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Erro ao iniciar timer");
 }
 
@@ -197,7 +232,10 @@ export function streamSupervision(
 }
 
 export async function saveSession(sessionId: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/sessions/${sessionId}`, { method: "DELETE" });
+  const res = await fetch(`${BASE}/api/sessions/${sessionId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Erro ao salvar sessão");
 }
 
@@ -215,4 +253,21 @@ export function streamSupervisionPreview(
     onToken,
     onDone
   );
+}
+
+export interface TrajectoryEntry {
+  id: string;
+  session_id: string;
+  approach: string;
+  rubric_scores: DimensaoRubrica[];
+  created_at: string;
+}
+
+export async function getTrajectory(): Promise<TrajectoryEntry[]> {
+  const res = await fetch(`${BASE}/api/users/me/trajectory`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Erro ao carregar trajetória");
+  const data = await res.json();
+  return data.sessions as TrajectoryEntry[];
 }
