@@ -6,6 +6,7 @@ import {
   getSession,
   toggleTimer,
   sendMessage,
+  authHeaders,
   type SessionState,
   type TimerInfo,
 } from "@/lib/api";
@@ -30,7 +31,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
   const [streaming, setStreaming] = useState(false);
   const [timer, setTimer] = useState<TimerInfo | null>(null);
   const [showTimer, setShowTimer] = useState(false);
-  const [supervisionMode, setSupervisionMode] = useState<"realtime" | "session" | "last3" | null>(null);
+  const [supervisionMode, setSupervisionMode] = useState<"realtime" | "session" | "last5" | null>(null);
   const [supervisionPanelOpen, setSupervisionPanelOpen] = useState(false);
   const [supervisionContent, setSupervisionContent] = useState("");
   const [supervisionLoading, setSupervisionLoading] = useState(false);
@@ -86,13 +87,13 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     setShowTimer(v => !v);
   }
 
-  function getHistorySlice(mode: "realtime" | "session" | "last3") {
-    if (mode === "session") return null; // all history
-    if (mode === "last3") return Math.max(0, messages.length - 6); // last 3 exchanges = 6 messages
-    return Math.max(0, messages.length - 4); // realtime = last 2 exchanges = 4 messages
+  function getHistorySlice(mode: "realtime" | "session" | "last5") {
+    if (mode === "session") return null;
+    if (mode === "last5") return Math.max(0, messages.length - 10); // 5 exchanges = 10 messages
+    return Math.max(0, messages.length - 2); // realtime = last 1 exchange = 2 messages
   }
 
-  async function handleSupervise(mode: "realtime" | "session" | "last3") {
+  async function handleSupervise(mode: "realtime" | "session" | "last5") {
     setSupervisionMode(mode);
     setSupervisionPanelOpen(true);
     setSupervisionContent("");
@@ -108,7 +109,7 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/sessions/${sessionId}/supervise-preview`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({ approach, mode, history: historyToSend }),
       });
       if (!res.ok) {
@@ -219,10 +220,10 @@ export default function SessionView({ sessionId }: { sessionId: string }) {
                   style={{ background: "rgba(255,255,255,0.12)", color: "var(--nav-text)" }}>
                   📋sessão
                 </button>
-                <button onClick={() => handleSupervise("last3")}
+                <button onClick={() => handleSupervise("last5")}
                   className="text-xs font-mono px-2 h-7 rounded transition-colors"
                   style={{ background: "rgba(255,255,255,0.12)", color: "var(--nav-text)" }}>
-                  ⏪recente
+                  ⏪últimos 5t
                 </button>
               </div>
               <button onClick={() => setSupervisionPanelOpen(false)}
