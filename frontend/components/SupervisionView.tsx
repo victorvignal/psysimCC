@@ -24,6 +24,7 @@ export default function SupervisionView({
   const [loadingRubric, setLoadingRubric] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Save session when arriving at supervision page
   useEffect(() => {
@@ -36,21 +37,55 @@ export default function SupervisionView({
     setFeedback("");
     setRubrica(null);
     setDone(false);
+    setError(null);
     setStreaming(true);
     setLoadingRubric(true);
 
-    // Rubrica e narrativa em paralelo
     getRubric(sessionId)
       .then((r) => setRubrica(r))
       .catch(() => {})
       .finally(() => setLoadingRubric(false));
 
-    streamSupervision(
-      sessionId,
-      approach,
-      (token) => setFeedback((f) => f + token),
-      () => { setStreaming(false); setDone(true); }
-    );
+    const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    try {
+      const { authHeaders } = await import("@/lib/api");
+      const res = await fetch(`${BASE}/api/sessions/${sessionId}/supervise`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ approach }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `Erro ${res.status}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("Sem stream");
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const payload = JSON.parse(line.slice(6).trim());
+            if (payload.type === "token") setFeedback((f) => f + payload.content);
+            if (payload.type === "done") { reader.cancel(); return; }
+          } catch { /* ignora linhas malformadas */ }
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setStreaming(false);
+      setDone(true);
+    }
   }
 
   function handleReset() {
@@ -110,6 +145,16 @@ export default function SupervisionView({
               style={{ background: "var(--nav-bg)", color: "var(--nav-text)" }}>
               Iniciar supervisão →
             </button>
+          </div>
+        )}
+
+        {/* Erro */}
+        {error && (
+          <div className="rounded-lg p-4 text-sm mb-6"
+            style={{ background: "var(--red-bg)", color: "var(--red-fg)", border: "1px solid var(--red-fg)" }}>
+            {error}
+            <button onClick={() => { setError(null); setDone(false); setStreaming(false); }}
+              className="ml-4 text-xs underline opacity-70">tentar novamente</button>
           </div>
         )}
 

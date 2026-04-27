@@ -99,6 +99,10 @@ class MessageRequest(BaseModel):
     content: str
 
 
+class SuperviseRequest(BaseModel):
+    approach: str = "TCC"
+
+
 class SupervisePreviewRequest(BaseModel):
     approach: str = "TCC"
     mode: str = "session"
@@ -240,16 +244,23 @@ def start_timer(session_id: str, user_id: str = Depends(get_current_user)) -> di
 
 
 @app.post("/api/sessions/{session_id}/supervise")
-async def supervise(session_id: str, user_id: str = Depends(get_current_user)):
+async def supervise(
+    session_id: str,
+    req: SuperviseRequest,
+    user_id: str = Depends(get_current_user),
+):
     """Supervisão via histórico da sessão (chamado pelo frontend após fim da sessão)."""
     state = _sessions.get(session_id)
     if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        state = _load_session(session_id)
+        if not state:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        _sessions[session_id] = state
     if not state.agent.history:
         raise HTTPException(status_code=400, detail="Nenhuma conversa para supervisionar")
 
     supervisor = SupervisorAgent()
-    approach = state.approach or "TCC"
+    approach = req.approach or state.approach or "TCC"
 
     async def generate():
         full = ""
@@ -275,7 +286,10 @@ async def supervise_preview(
     """Supervisão em tempo real com histórico enviado diretamente pelo frontend."""
     state = _sessions.get(session_id)
     if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        state = _load_session(session_id)
+        if not state:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        _sessions[session_id] = state
     if not req.history:
         raise HTTPException(status_code=400, detail="Nenhuma mensagem para supervisionar")
 
@@ -297,10 +311,13 @@ async def supervise_preview(
 
 
 @app.post("/api/sessions/{session_id}/rubric")
-def get_rubric(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
+async def get_rubric(session_id: str, user_id: str = Depends(get_current_user)) -> dict:
     state = _sessions.get(session_id)
     if not state:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        state = _load_session(session_id)
+        if not state:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        _sessions[session_id] = state
     if not state.agent.history:
         raise HTTPException(status_code=400, detail="Nenhuma conversa para avaliar")
 
