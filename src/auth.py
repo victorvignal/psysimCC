@@ -1,41 +1,46 @@
 import os
 from typing import Optional
 
+import httpx
 from fastapi import Header, HTTPException
-from supabase import create_client
 
-_supabase_client = None
-
-
-def _get_client():
-    global _supabase_client
-    if _supabase_client is None:
-        url = (os.getenv("SUPABASE_URL") or "").strip()
-        key = (os.getenv("SUPABASE_KEY") or "").strip()
-        if not url or not key:
-            return None
-        _supabase_client = create_client(url, key)
-    return _supabase_client
+_SUPABASE_URL = ""
 
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> str:
-    """Valida o JWT via Supabase Auth API. Funciona com HS256 e RS256."""
+def _supabase_url() -> str:
+    global _SUPABASE_URL
+    if not _SUPABASE_URL:
+        _SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").rstrip("/")
+    return _SUPABASE_URL
+
+
+async def get_current_user(authorization: Optional[str] = Header(None)) -> str:
+    """Valida o JWT chamando GET /auth/v1/user no Supabase. Async, sem bloquear o event loop."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Não autenticado")
 
     token = authorization.split(" ", 1)[1].strip()
+    url = _supabase_url()
 
-    client = _get_client()
-    if not client:
-        raise HTTPException(status_code=500, detail="Supabase não configurado")
+    if not url:
+        raise HTTPException(status_code=500, detail="SUPABASE_URL não configurado")
 
     try:
-        result = client.auth.get_user(token)
-        user = result.user
-        if not user or not user.id:
-            raise HTTPException(status_code=401, detail="Usuário não encontrado")
-        return str(user.id)
-    except HTTPException:
-        raise
-    except Exception:
-        raise HTTPException(status_code=401, detail="Token inválido")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                f"{url}/auth/v1/user",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=401, detail="Timeout ao verificar token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Erro ao verificar token: {e}")
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+    user_id = resp.json().get("id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token sem user_id")
+
+    return str(user_id)
