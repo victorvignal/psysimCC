@@ -1,22 +1,16 @@
-import { getDashboard, listFichas, type FichaInfo, type Dashboard } from "@/lib/api";
+import { listFichas, type FichaInfo } from "@/lib/api";
 import PatientGrid from "@/components/PatientGrid";
-import DashboardStats from "@/components/DashboardStats";
-import RecentSessions from "@/components/RecentSessions";
+import DashboardClient from "@/components/DashboardClient";
 import LogoutButton from "@/components/LogoutButton";
 
 export default async function Home() {
   let fichas: FichaInfo[] = [];
-  let dashboard: Dashboard | null = null;
   let error: string | null = null;
 
   try {
-    [fichas, dashboard] = await Promise.all([listFichas(), getDashboard()]);
+    fichas = await listFichas();
   } catch {
-    try {
-      fichas = await listFichas();
-    } catch {
-      error = "Não foi possível conectar ao servidor.";
-    }
+    error = "Não foi possível conectar ao servidor.";
   }
 
   return (
@@ -38,13 +32,8 @@ export default async function Home() {
 
       <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col gap-10">
 
-        {/* Stats + Progress */}
-        {dashboard && <DashboardStats dashboard={dashboard} />}
-
-        {/* Sessões recentes */}
-        {dashboard && dashboard.recent_sessions.length > 0 && (
-          <RecentSessions sessions={dashboard.recent_sessions} />
-        )}
+        {/* Dashboard + trajetória (client-side, com auth token) */}
+        <DashboardClient />
 
         {/* Pacientes */}
         <div>

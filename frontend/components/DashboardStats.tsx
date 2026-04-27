@@ -1,14 +1,5 @@
 import type { Dashboard } from "@/lib/api";
 
-const RUBRICA_DIMS = [
-  "Empatia e validação",
-  "Formulação de caso",
-  "Técnica de entrevista",
-  "Manejo de resistência",
-  "Aliança terapêutica",
-  "Planejamento terapêutico",
-];
-
 function avg(scores: number[]): number {
   if (!scores.length) return 0;
   return scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -80,7 +71,7 @@ export default function DashboardStats({ dashboard }: { dashboard: Dashboard }) 
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {RUBRICA_DIMS.map((dim) => {
+            {Object.keys(allProgress).map((dim) => {
               const scores = allProgress[dim] || [];
               const media = avg(scores);
               return (
